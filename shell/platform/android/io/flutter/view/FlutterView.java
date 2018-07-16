@@ -30,6 +30,8 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.opengl.EGLContext;
+import io.flutter.app.FlutterActivity;
 import io.flutter.app.FlutterPluginRegistry;
 import io.flutter.plugin.common.*;
 import io.flutter.plugin.editing.TextInputPlugin;
@@ -46,8 +48,9 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * An Android view containing a Flutter app.
  */
-public class FlutterView extends SurfaceView
-        implements BinaryMessenger, TextureRegistry, AccessibilityManager.AccessibilityStateChangeListener {
+public class FlutterView
+        extends SurfaceView implements BinaryMessenger, TextureRegistry,
+                                       AccessibilityManager.AccessibilityStateChangeListener {
     /**
      * Interface for those objects that maintain and expose a reference to a
      * {@code FlutterView} (such as a full-screen Flutter activity).
@@ -150,21 +153,29 @@ public class FlutterView extends SurfaceView
         };
         getHolder().addCallback(mSurfaceCallback);
 
-        mAccessibilityManager = (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
+        mAccessibilityManager =
+                (AccessibilityManager) getContext().getSystemService(Context.ACCESSIBILITY_SERVICE);
 
         mActivityLifecycleListeners = new ArrayList<>();
         mFirstFrameListeners = new ArrayList<>();
 
         // Configure the platform plugins and flutter channels.
-        mFlutterLocalizationChannel = new MethodChannel(this, "flutter/localization", JSONMethodCodec.INSTANCE);
-        mFlutterNavigationChannel = new MethodChannel(this, "flutter/navigation", JSONMethodCodec.INSTANCE);
-        mFlutterKeyEventChannel = new BasicMessageChannel<>(this, "flutter/keyevent", JSONMessageCodec.INSTANCE);
-        mFlutterLifecycleChannel = new BasicMessageChannel<>(this, "flutter/lifecycle", StringCodec.INSTANCE);
-        mFlutterSystemChannel = new BasicMessageChannel<>(this, "flutter/system", JSONMessageCodec.INSTANCE);
-        mFlutterSettingsChannel = new BasicMessageChannel<>(this, "flutter/settings", JSONMessageCodec.INSTANCE);
+        mFlutterLocalizationChannel =
+                new MethodChannel(this, "flutter/localization", JSONMethodCodec.INSTANCE);
+        mFlutterNavigationChannel =
+                new MethodChannel(this, "flutter/navigation", JSONMethodCodec.INSTANCE);
+        mFlutterKeyEventChannel =
+                new BasicMessageChannel<>(this, "flutter/keyevent", JSONMessageCodec.INSTANCE);
+        mFlutterLifecycleChannel =
+                new BasicMessageChannel<>(this, "flutter/lifecycle", StringCodec.INSTANCE);
+        mFlutterSystemChannel =
+                new BasicMessageChannel<>(this, "flutter/system", JSONMessageCodec.INSTANCE);
+        mFlutterSettingsChannel =
+                new BasicMessageChannel<>(this, "flutter/settings", JSONMessageCodec.INSTANCE);
 
         PlatformPlugin platformPlugin = new PlatformPlugin(activity);
-        MethodChannel flutterPlatformChannel = new MethodChannel(this, "flutter/platform", JSONMethodCodec.INSTANCE);
+        MethodChannel flutterPlatformChannel =
+                new MethodChannel(this, "flutter/platform", JSONMethodCodec.INSTANCE);
         flutterPlatformChannel.setMethodCallHandler(platformPlugin);
         addActivityLifecycleListener(platformPlugin);
         mImm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -317,7 +328,8 @@ public class FlutterView extends SurfaceView
     }
 
     private void setLocale(Locale locale) {
-        mFlutterLocalizationChannel.invokeMethod("setLocale", Arrays.asList(locale.getLanguage(), locale.getCountry()));
+        mFlutterLocalizationChannel.invokeMethod(
+                "setLocale", Arrays.asList(locale.getLanguage(), locale.getCountry()));
     }
 
     @Override
@@ -332,8 +344,7 @@ public class FlutterView extends SurfaceView
     }
 
     public FlutterNativeView detach() {
-        if (!isAttached())
-            return null;
+        if (!isAttached()) return null;
         getHolder().removeCallback(mSurfaceCallback);
         mNativeView.detach();
 
@@ -343,8 +354,7 @@ public class FlutterView extends SurfaceView
     }
 
     public void destroy() {
-        if (!isAttached())
-            return;
+        if (!isAttached()) return;
 
         getHolder().removeCallback(mSurfaceCallback);
 
@@ -406,17 +416,17 @@ public class FlutterView extends SurfaceView
 
     private int getPointerDeviceTypeForToolType(int toolType) {
         switch (toolType) {
-        case MotionEvent.TOOL_TYPE_FINGER:
-            return kPointerDeviceKindTouch;
-        case MotionEvent.TOOL_TYPE_STYLUS:
-            return kPointerDeviceKindStylus;
-        case MotionEvent.TOOL_TYPE_MOUSE:
-            return kPointerDeviceKindMouse;
-        case MotionEvent.TOOL_TYPE_ERASER:
-            return kPointerDeviceKindInvertedStylus;
-        default:
-            // MotionEvent.TOOL_TYPE_UNKNOWN will reach here.
-            return kPointerDeviceKindUnknown;
+            case MotionEvent.TOOL_TYPE_FINGER:
+                return kPointerDeviceKindTouch;
+            case MotionEvent.TOOL_TYPE_STYLUS:
+                return kPointerDeviceKindStylus;
+            case MotionEvent.TOOL_TYPE_MOUSE:
+                return kPointerDeviceKindMouse;
+            case MotionEvent.TOOL_TYPE_ERASER:
+                return kPointerDeviceKindInvertedStylus;
+            default:
+                // MotionEvent.TOOL_TYPE_UNKNOWN will reach here.
+                return kPointerDeviceKindUnknown;
         }
     }
 
@@ -454,7 +464,8 @@ public class FlutterView extends SurfaceView
         packet.putDouble(1.0); // pressure_max
 
         if (pointerKind == kPointerDeviceKindStylus) {
-            packet.putDouble(event.getAxisValue(MotionEvent.AXIS_DISTANCE, pointerIndex)); // distance
+            packet.putDouble(
+                    event.getAxisValue(MotionEvent.AXIS_DISTANCE, pointerIndex)); // distance
             packet.putDouble(0.0); // distance_max
         } else {
             packet.putDouble(0.0); // distance
@@ -467,7 +478,8 @@ public class FlutterView extends SurfaceView
         packet.putDouble(0.0); // radius_min
         packet.putDouble(0.0); // radius_max
 
-        packet.putDouble(event.getAxisValue(MotionEvent.AXIS_ORIENTATION, pointerIndex)); // orientation
+        packet.putDouble(
+                event.getAxisValue(MotionEvent.AXIS_ORIENTATION, pointerIndex)); // orientation
 
         if (pointerKind == kPointerDeviceKindStylus) {
             packet.putDouble(event.getAxisValue(MotionEvent.AXIS_TILT, pointerIndex)); // tilt
@@ -497,14 +509,16 @@ public class FlutterView extends SurfaceView
 
         int pointerCount = event.getPointerCount();
 
-        ByteBuffer packet = ByteBuffer.allocateDirect(pointerCount * kPointerDataFieldCount * kBytePerField);
+        ByteBuffer packet =
+                ByteBuffer.allocateDirect(pointerCount * kPointerDataFieldCount * kBytePerField);
         packet.order(ByteOrder.LITTLE_ENDIAN);
 
         int maskedAction = event.getActionMasked();
         // ACTION_UP, ACTION_POINTER_UP, ACTION_DOWN, and ACTION_POINTER_DOWN
         // only apply to a single pointer, other events apply to all pointers.
         if (maskedAction == MotionEvent.ACTION_UP || maskedAction == MotionEvent.ACTION_POINTER_UP
-                || maskedAction == MotionEvent.ACTION_DOWN || maskedAction == MotionEvent.ACTION_POINTER_DOWN) {
+                || maskedAction == MotionEvent.ACTION_DOWN
+                || maskedAction == MotionEvent.ACTION_POINTER_DOWN) {
             addPointerForIndex(event, event.getActionIndex(), packet);
         } else {
             // ACTION_MOVE may not actually mean all pointers have moved
@@ -586,22 +600,20 @@ public class FlutterView extends SurfaceView
     }
 
     void assertAttached() {
-        if (!isAttached())
-            throw new AssertionError("Platform view is not attached");
+        if (!isAttached()) throw new AssertionError("Platform view is not attached");
     }
 
     private void preRun() {
         resetAccessibilityTree();
     }
 
-    private void postRun() {
-    }
+    private void postRun() {}
 
     public void runFromBundle(FlutterRunArguments args) {
-      assertAttached();
-      preRun();
-      mNativeView.runFromBundle(args);
-      postRun();
+        assertAttached();
+        preRun();
+        mNativeView.runFromBundle(args);
+        postRun();
     }
 
     /**
@@ -628,7 +640,8 @@ public class FlutterView extends SurfaceView
      * Parameter `reuseRuntimeController` has no effect.
      */
     @Deprecated
-    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint, boolean reuseRuntimeController) {
+    public void runFromBundle(String bundlePath, String defaultPath, String entrypoint,
+            boolean reuseRuntimeController) {
         FlutterRunArguments args = new FlutterRunArguments();
         args.bundlePath = bundlePath;
         args.entrypoint = entrypoint;
@@ -646,45 +659,58 @@ public class FlutterView extends SurfaceView
         return nativeGetBitmap(mNativeView.get());
     }
 
-    private static native void nativeSurfaceCreated(long nativePlatformViewAndroid, Surface surface);
+    private static native void nativeSurfaceCreated(
+            long nativePlatformViewAndroid, Surface surface);
 
-    private static native void nativeSurfaceChanged(long nativePlatformViewAndroid, int width, int height);
+    private static native void nativeSurfaceChanged(
+            long nativePlatformViewAndroid, int width, int height);
 
     private static native void nativeSurfaceDestroyed(long nativePlatformViewAndroid);
 
-    private static native void nativeSetViewportMetrics(long nativePlatformViewAndroid, float devicePixelRatio,
-            int physicalWidth, int physicalHeight, int physicalPaddingTop, int physicalPaddingRight,
-            int physicalPaddingBottom, int physicalPaddingLeft, int physicalViewInsetTop, int physicalViewInsetRight,
-            int physicalViewInsetBottom, int physicalViewInsetLeft);
+    private static native void nativeSetViewportMetrics(long nativePlatformViewAndroid,
+            float devicePixelRatio, int physicalWidth, int physicalHeight, int physicalPaddingTop,
+            int physicalPaddingRight, int physicalPaddingBottom, int physicalPaddingLeft,
+            int physicalViewInsetTop, int physicalViewInsetRight, int physicalViewInsetBottom,
+            int physicalViewInsetLeft);
 
     private static native Bitmap nativeGetBitmap(long nativePlatformViewAndroid);
 
-    private static native void nativeDispatchPointerDataPacket(long nativePlatformViewAndroid, ByteBuffer buffer,
-            int position);
+    private static native void nativeDispatchPointerDataPacket(
+            long nativePlatformViewAndroid, ByteBuffer buffer, int position);
 
-    private static native void nativeDispatchSemanticsAction(long nativePlatformViewAndroid, int id, int action,
-            ByteBuffer args, int argsPosition);
+    private static native void nativeDispatchSemanticsAction(
+            long nativePlatformViewAndroid, int id, int action, ByteBuffer args, int argsPosition);
 
-    private static native void nativeSetSemanticsEnabled(long nativePlatformViewAndroid, boolean enabled);
+    private static native void nativeSetSemanticsEnabled(
+            long nativePlatformViewAndroid, boolean enabled);
 
-    private static native void nativeSetAccessibilityFeatures(long nativePlatformViewAndroid, int flags);
+    private static native void nativeSetAccessibilityFeatures(
+            long nativePlatformViewAndroid, int flags);
 
     private static native boolean nativeGetIsSoftwareRenderingEnabled();
 
-    private static native void nativeRegisterTexture(long nativePlatformViewAndroid, long textureId,
-            SurfaceTexture surfaceTexture);
+    private static native void nativeRegisterTexture(
+            long nativePlatformViewAndroid, long textureId, SurfaceTexture surfaceTexture);
 
-    private static native void nativeMarkTextureFrameAvailable(long nativePlatformViewAndroid, long textureId);
+    private static native void nativeGLRegisterTexture(
+            long nativePlatformViewAndroid, long textureIndex, long textureId);
 
-    private static native void nativeUnregisterTexture(long nativePlatformViewAndroid, long textureId);
+    private static native EGLContext nativeGetContext(long nativePlatformViewAndroid);
+
+    private static native void nativeMarkTextureFrameAvailable(
+            long nativePlatformViewAndroid, long textureId);
+
+    private static native void nativeUnregisterTexture(
+            long nativePlatformViewAndroid, long textureId);
 
     private void updateViewportMetrics() {
-        if (!isAttached())
-            return;
-        nativeSetViewportMetrics(mNativeView.get(), mMetrics.devicePixelRatio, mMetrics.physicalWidth,
-                mMetrics.physicalHeight, mMetrics.physicalPaddingTop, mMetrics.physicalPaddingRight,
-                mMetrics.physicalPaddingBottom, mMetrics.physicalPaddingLeft, mMetrics.physicalViewInsetTop,
-                mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom, mMetrics.physicalViewInsetLeft);
+        if (!isAttached()) return;
+        nativeSetViewportMetrics(mNativeView.get(), mMetrics.devicePixelRatio,
+                mMetrics.physicalWidth, mMetrics.physicalHeight, mMetrics.physicalPaddingTop,
+                mMetrics.physicalPaddingRight, mMetrics.physicalPaddingBottom,
+                mMetrics.physicalPaddingLeft, mMetrics.physicalViewInsetTop,
+                mMetrics.physicalViewInsetRight, mMetrics.physicalViewInsetBottom,
+                mMetrics.physicalViewInsetLeft);
 
         WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
         float fps = wm.getDefaultDisplay().getRefreshRate();
@@ -735,8 +761,7 @@ public class FlutterView extends SurfaceView
     }
 
     protected void dispatchSemanticsAction(int id, AccessibilityBridge.Action action, Object args) {
-        if (!isAttached())
-            return;
+        if (!isAttached()) return;
         ByteBuffer encodedArgs = null;
         int position = 0;
         if (args != null) {
@@ -752,8 +777,10 @@ public class FlutterView extends SurfaceView
         mAccessibilityEnabled = mAccessibilityManager.isEnabled();
         mTouchExplorationEnabled = mAccessibilityManager.isTouchExplorationEnabled();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
-            getContext().getContentResolver().registerContentObserver(transitionUri, false, mAnimationScaleObserver);
+            Uri transitionUri =
+                    Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
+            getContext().getContentResolver().registerContentObserver(
+                    transitionUri, false, mAnimationScaleObserver);
         }
 
         if (mAccessibilityEnabled || mTouchExplorationEnabled) {
@@ -776,8 +803,8 @@ public class FlutterView extends SurfaceView
 
     private void updateAccessibilityFeatures() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            String transitionAnimationScale = Settings.Global.getString(getContext().getContentResolver(),
-                Settings.Global.TRANSITION_ANIMATION_SCALE);
+            String transitionAnimationScale = Settings.Global.getString(
+                    getContext().getContentResolver(), Settings.Global.TRANSITION_ANIMATION_SCALE);
             if (transitionAnimationScale != null && transitionAnimationScale.equals("0")) {
                 mAccessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
             } else {
@@ -793,7 +820,8 @@ public class FlutterView extends SurfaceView
         getContext().getContentResolver().unregisterContentObserver(mAnimationScaleObserver);
         mAccessibilityManager.removeAccessibilityStateChangeListener(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            mAccessibilityManager.removeTouchExplorationStateChangeListener(mTouchExplorationListener);
+            mAccessibilityManager.removeTouchExplorationStateChangeListener(
+                    mTouchExplorationListener);
         }
     }
 
@@ -846,8 +874,8 @@ public class FlutterView extends SurfaceView
 
         @Override
         public void onChange(boolean selfChange, Uri uri) {
-            String value = Settings.Global.getString(getContext().getContentResolver(),
-                    Settings.Global.TRANSITION_ANIMATION_SCALE);
+            String value = Settings.Global.getString(
+                    getContext().getContentResolver(), Settings.Global.TRANSITION_ANIMATION_SCALE);
             if (value == "0") {
                 mAccessibilityFeatureFlags ^= AccessibilityFeature.DISABLE_ANIMATIONS.value;
             } else {
@@ -857,7 +885,8 @@ public class FlutterView extends SurfaceView
         }
     }
 
-    class TouchExplorationListener implements AccessibilityManager.TouchExplorationStateChangeListener {
+    class TouchExplorationListener
+            implements AccessibilityManager.TouchExplorationStateChangeListener {
         @Override
         public void onTouchExplorationStateChanged(boolean enabled) {
             if (enabled) {
@@ -879,8 +908,7 @@ public class FlutterView extends SurfaceView
 
     @Override
     public AccessibilityNodeProvider getAccessibilityNodeProvider() {
-        if (mAccessibilityEnabled)
-            return mAccessibilityNodeProvider;
+        if (mAccessibilityEnabled) return mAccessibilityNodeProvider;
         // TODO(goderbauer): when a11y is off this should return a one-off snapshot of
         // the a11y
         // tree.
@@ -890,8 +918,7 @@ public class FlutterView extends SurfaceView
     private AccessibilityBridge mAccessibilityNodeProvider;
 
     void ensureAccessibilityEnabled() {
-        if (!isAttached())
-            return;
+        if (!isAttached()) return;
         mAccessibilityEnabled = true;
         if (mAccessibilityNodeProvider == null) {
             mAccessibilityNodeProvider = new AccessibilityBridge(this);
@@ -910,7 +937,8 @@ public class FlutterView extends SurfaceView
         if (!mTouchExplorationEnabled) {
             return false;
         }
-        if (event.getAction() == MotionEvent.ACTION_HOVER_ENTER || event.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
+        if (event.getAction() == MotionEvent.ACTION_HOVER_ENTER
+                || event.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
             mAccessibilityNodeProvider.handleTouchExploration(event.getX(), event.getY());
         } else if (event.getAction() == MotionEvent.ACTION_HOVER_EXIT) {
             mAccessibilityNodeProvider.handleTouchExplorationExit();
@@ -944,18 +972,36 @@ public class FlutterView extends SurfaceView
      * Listener will be called on the Android UI thread once when Flutter renders
      * the first frame.
      */
-    public interface FirstFrameListener {
-        void onFirstFrame();
-    }
+    public interface FirstFrameListener { void onFirstFrame(); }
 
     @Override
     public TextureRegistry.SurfaceTextureEntry createSurfaceTexture() {
         final SurfaceTexture surfaceTexture = new SurfaceTexture(0);
         surfaceTexture.detachFromGLContext();
-        final SurfaceTextureRegistryEntry entry = new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(),
-                surfaceTexture);
+        final SurfaceTextureRegistryEntry entry =
+                new SurfaceTextureRegistryEntry(nextTextureId.getAndIncrement(), surfaceTexture);
         nativeRegisterTexture(mNativeView.get(), entry.id(), surfaceTexture);
         return entry;
+    }
+
+    @Override
+    public void onGLFrameAvaliable(int textureIndex) {
+        Log.d("flutter_test", String.format("Paint test gl 1111 textureindex:%d", textureIndex));
+        nativeMarkTextureFrameAvailable(mNativeView.get(), textureIndex);
+    }
+
+    @Override
+    public long registerGLTexture(long textureID) {
+        long texIndex = nextTextureId.getAndIncrement();
+        Log.d("flutter_test",
+                String.format("Register 1111111 textureindex:%d,textureID", texIndex, textureID));
+        nativeGLRegisterTexture(mNativeView.get(), texIndex, textureID);
+        return texIndex;
+    }
+
+    @Override
+    public EGLContext getGLContext() {
+        return nativeGetContext(mNativeView.get());
     }
 
     final class SurfaceTextureRegistryEntry implements TextureRegistry.SurfaceTextureEntry {
@@ -966,22 +1012,26 @@ public class FlutterView extends SurfaceView
         SurfaceTextureRegistryEntry(long id, SurfaceTexture surfaceTexture) {
             this.id = id;
             this.surfaceTexture = surfaceTexture;
-            this.surfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-                @Override
-                public void onFrameAvailable(SurfaceTexture texture) {
-                    if (released) {
-                        // Even though we make sure to unregister the callback before releasing, as of Android O
-                        // SurfaceTexture has a data race when accessing the callback, so the callback may
-                        // still be called by a stale reference after released==true and mNativeView==null.
-                        return;
-                    }
-                    nativeMarkTextureFrameAvailable(mNativeView.get(), SurfaceTextureRegistryEntry.this.id);
-                }
-            },
-            // The callback relies on being executed on the UI thread (unsynchronised read of mNativeView
-            // and also the engine code check for platform thread in Shell::OnPlatformViewMarkTextureFrameAvailable),
-            // so we explicitly pass a Handler for the current thread.
-            new Handler());
+            this.surfaceTexture.setOnFrameAvailableListener(
+                    new SurfaceTexture.OnFrameAvailableListener() {
+                        @Override
+                        public void onFrameAvailable(SurfaceTexture texture) {
+                            if (released) {
+                                // Even though we make sure to unregister the callback before
+                                // releasing, as of Android O SurfaceTexture has a data race when
+                                // accessing the callback, so the callback may still be called by a
+                                // stale reference after released==true and mNativeView==null.
+                                return;
+                            }
+                            nativeMarkTextureFrameAvailable(
+                                    mNativeView.get(), SurfaceTextureRegistryEntry.this.id);
+                        }
+                    },
+                    // The callback relies on being executed on the UI thread (unsynchronised read
+                    // of mNativeView and also the engine code check for platform thread in
+                    // Shell::OnPlatformViewMarkTextureFrameAvailable), so we explicitly pass a
+                    // Handler for the current thread.
+                    new Handler());
         }
 
         @Override
@@ -1002,7 +1052,8 @@ public class FlutterView extends SurfaceView
             released = true;
             nativeUnregisterTexture(mNativeView.get(), id);
             // Otherwise onFrameAvailableListener might be called after mNativeView==null
-            // (https://github.com/flutter/flutter/issues/20951). See also the check in onFrameAvailable.
+            // (https://github.com/flutter/flutter/issues/20951). See also the check in
+            // onFrameAvailable.
             surfaceTexture.setOnFrameAvailableListener(null);
             surfaceTexture.release();
         }

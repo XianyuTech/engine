@@ -34,6 +34,8 @@ class PlatformViewIOS final : public HeadlessPlatformViewIOS {
 
   void RegisterExternalTexture(int64_t id, NSObject<FlutterTexture>* texture);
 
+  void* GetGLShareGroup();
+
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> GetTextInputPlugin() const;
 
   void SetTextInputPlugin(

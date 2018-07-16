@@ -1041,6 +1041,10 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 #pragma mark - FlutterTextureRegistry
 
+- (EAGLSharegroup*)glShareGroup {
+  return (EAGLSharegroup*)([self iosPlatformView] -> GetGLShareGroup());
+}
+
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture {
   int64_t textureId = _nextTextureId++;
   [self iosPlatformView] -> RegisterExternalTexture(textureId, texture);

@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 package io.flutter.view;
-
 import android.graphics.SurfaceTexture;
+import android.opengl.EGLContext;
 
 /**
  * Registry of backend textures used with a single {@link FlutterView} instance.
@@ -13,12 +13,18 @@ import android.graphics.SurfaceTexture;
  * widget.
  */
 public interface TextureRegistry {
-   /**
-    * Creates and registers a SurfaceTexture managed by the Flutter engine.
-    *
-    * @return A SurfaceTextureEntry.
-    */
+    /**
+     * Creates and registers a SurfaceTexture managed by the Flutter engine.
+     *
+     * @return A SurfaceTextureEntry.
+     */
     SurfaceTextureEntry createSurfaceTexture();
+
+    void onGLFrameAvaliable(int index);
+
+    long registerGLTexture(long textureID);
+
+    EGLContext getGLContext();
 
     /**
      * A registry entry for a managed SurfaceTexture.

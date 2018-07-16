@@ -41,6 +41,10 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
   RegisterTexture(std::make_shared<IOSExternalTextureGL>(texture_id, texture));
 }
 
+void* PlatformViewIOS::GetGLShareGroup() {
+  return ios_surface_->GetGLShareGroup();
+}
+
 // |shell::PlatformView|
 std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
   return ios_surface_->CreateGPUSurface();

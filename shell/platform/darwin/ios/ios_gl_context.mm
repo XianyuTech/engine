@@ -19,9 +19,9 @@ IOSGLContext::IOSGLContext(fml::scoped_nsobject<CAEAGLLayer> layer)
       storage_size_width_(0),
       storage_size_height_(0),
       valid_(false) {
-  context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3]);
+  context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]);
   if (context_ != nullptr) {
-    resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES3
+    resource_context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2
                                                   sharegroup:context_.get().sharegroup]);
   } else {
     context_.reset([[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2]);
@@ -160,6 +160,12 @@ bool IOSGLContext::MakeCurrent() {
 
 bool IOSGLContext::ResourceMakeCurrent() {
   return [EAGLContext setCurrentContext:resource_context_.get()];
+}
+
+void* IOSGLContext::GetGLShareGroup() {
+  EAGLSharegroup* shareGroup = context_.get().sharegroup;
+  NSLog(@"test !!!!! get group%@", shareGroup);
+  return (void*)shareGroup;
 }
 
 }  // namespace shell

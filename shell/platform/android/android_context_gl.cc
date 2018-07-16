@@ -66,6 +66,12 @@ static EGLResult<EGLSurface> CreateContext(EGLDisplay display,
 
   EGLContext context = eglCreateContext(display, config, share, attributes);
 
+  if (context == EGL_NO_CONTEXT) {
+    EGLint last_error = eglGetError();
+    if (last_error == EGL_BAD_MATCH && share != EGL_NO_CONTEXT) {
+      context = eglCreateContext(display, config, EGL_NO_CONTEXT, attributes);
+    }
+  }
   return {context != EGL_NO_CONTEXT, context};
 }
 
@@ -141,6 +147,10 @@ bool AndroidContextGL::CreatePBufferSurface() {
 
   surface_ = eglCreatePbufferSurface(display, config_, attribs);
   return surface_ != EGL_NO_SURFACE;
+}
+
+void* AndroidContextGL::GetContext() {
+  return context_;
 }
 
 AndroidContextGL::AndroidContextGL(fml::RefPtr<AndroidEnvironmentGL> env,
