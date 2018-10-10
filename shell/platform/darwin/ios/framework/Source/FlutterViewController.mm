@@ -21,8 +21,12 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
+static double kTouchTrackerCheckInterval = 1.f;
+
 @interface FlutterViewController () <FlutterTextInputDelegate>
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
+@property(nonatomic, retain) NSMutableSet* touchTrackerSet;
+@property(nonatomic, retain) NSMutableDictionary<NSValue*, NSNumber*>* touchTrackerDict;
 @end
 
 @interface FlutterViewControllerRegistrar : NSObject <FlutterPluginRegistrar>
@@ -69,6 +73,9 @@
       _dartProject.reset([[FlutterDartProject alloc] init]);
     else
       _dartProject.reset([projectOrNil retain]);
+
+    _touchTrackerSet = [[NSMutableSet set] retain];
+    _touchTrackerDict = [[NSMutableDictionary dictionary] retain];
 
     [self performCommonViewControllerInitialization];
   }
@@ -479,6 +486,8 @@
 - (void)dealloc {
   [[NSNotificationCenter defaultCenter] removeObserver:self];
   [_pluginPublications release];
+  [_touchTrackerSet release];
+  [_touchTrackerDict release];
   [super dealloc];
 }
 
@@ -550,12 +559,13 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   return blink::PointerData::DeviceKind::kTouch;
 }
 
-- (void)dispatchTouches:(NSSet*)touches phase:(UITouchPhase)phase {
+- (void)dispatchTouches:(NSSet*)touches phase:(UITouchPhase)phase trackTouches:(BOOL)bTrack {
   // Note: we cannot rely on touch.phase, since in some cases, e.g.,
   // handleStatusBarTouches, we synthesize touches from existing events.
   //
   // TODO(cbracken) consider creating out own class with the touch fields we
   // need.
+  NSTimeInterval tsNow = [[NSDate date] timeIntervalSinceReferenceDate];
   auto eventTypePhase = PointerChangePhaseFromUITouchPhase(phase);
   const CGFloat scale = [UIScreen mainScreen].scale;
   auto packet = std::make_unique<blink::PointerDataPacket>(touches.count);
@@ -563,17 +573,37 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   int i = 0;
   for (UITouch* touch in touches) {
     int device_id = 0;
+    NSValue* key = [NSValue valueWithPointer:(void*)touch];
 
     switch (eventTypePhase.second) {
-      case Accessed:
+      case Accessed: {
         device_id = _touchMapper.identifierOf(touch);
+        if (bTrack) {
+          [self.touchTrackerSet addObject:touch];
+          self.touchTrackerDict[key] = @(tsNow + kTouchTrackerCheckInterval);
+        }
         break;
-      case Added:
+      }
+      case Added: {
         device_id = _touchMapper.registerTouch(touch);
+        if (bTrack) {
+          [self.touchTrackerSet addObject:touch];
+          self.touchTrackerDict[key] = @(tsNow + kTouchTrackerCheckInterval);
+        }
         break;
-      case Removed:
+      }
+      case Removed: {
         device_id = _touchMapper.unregisterTouch(touch);
+        if (bTrack) {
+          [self.touchTrackerDict removeObjectForKey:key];
+          [self.touchTrackerSet removeObject:touch];
+        }
         break;
+      }
+    }
+
+    if (device_id == 0) {
+      continue;
     }
 
     FML_DCHECK(device_id != 0);
@@ -612,35 +642,36 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
     // These properties were introduced in iOS 9.1
     if (@available(iOS 9.1, *)) {
       // iOS Documentation: altitudeAngle
-      // A value of 0 radians indicates that the stylus is parallel to the surface. The value of
-      // this property is Pi/2 when the stylus is perpendicular to the surface.
+      // A value of 0 radians indicates that the stylus is parallel to the surface. The
+      // value of this property is Pi/2 when the stylus is perpendicular to the surface.
       //
       // PointerData Documentation: tilt
       // The angle of the stylus, in radians in the range:
       //    0 <= tilt <= pi/2
-      // giving the angle of the axis of the stylus, relative to the axis perpendicular to the input
-      // surface (thus 0.0 indicates the stylus is orthogonal to the plane of the input surface,
-      // while pi/2 indicates that the stylus is flat on that surface).
+      // giving the angle of the axis of the stylus, relative to the axis perpendicular to
+      // the input surface (thus 0.0 indicates the stylus is orthogonal to the plane of the
+      // input surface, while pi/2 indicates that the stylus is flat on that surface).
       //
       // Discussion:
       // The ranges are the same. Origins are swapped.
       pointer_data.tilt = M_PI_2 - touch.altitudeAngle;
 
       // iOS Documentation: azimuthAngleInView:
-      // With the tip of the stylus touching the screen, the value of this property is 0 radians
-      // when the cap end of the stylus (that is, the end opposite of the tip) points along the
-      // positive x axis of the device's screen. The azimuth angle increases as the user swings the
-      // cap end of the stylus in a clockwise direction around the tip.
+      // With the tip of the stylus touching the screen, the value of this property is 0
+      // radians when the cap end of the stylus (that is, the end opposite of the tip)
+      // points along the positive x axis of the device's screen. The azimuth angle
+      // increases as the user swings the cap end of the stylus in a clockwise direction
+      // around the tip.
       //
       // PointerData Documentation: orientation
       // The angle of the stylus, in radians in the range:
       //    -pi < orientation <= pi
-      // giving the angle of the axis of the stylus projected onto the input surface, relative to
-      // the positive y-axis of that surface (thus 0.0 indicates the stylus, if projected onto that
-      // surface, would go from the contact point vertically up in the positive y-axis direction, pi
-      // would indicate that the stylus would go down in the negative y-axis direction; pi/4 would
-      // indicate that the stylus goes up and to the right, -pi/2 would indicate that the stylus
-      // goes to the left, etc).
+      // giving the angle of the axis of the stylus projected onto the input surface,
+      // relative to the positive y-axis of that surface (thus 0.0 indicates the stylus, if
+      // projected onto that surface, would go from the contact point vertically up in the
+      // positive y-axis direction, pi would indicate that the stylus would go down in the
+      // negative y-axis direction; pi/4 would indicate that the stylus goes up and to the
+      // right, -pi/2 would indicate that the stylus goes to the left, etc).
       //
       // Discussion:
       // Sweep direction is the same. Phase of M_PI_2.
@@ -659,19 +690,44 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
 }
 
 - (void)touchesBegan:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches phase:UITouchPhaseBegan];
+  [self dispatchTouches:touches phase:UITouchPhaseBegan trackTouches:TRUE];
+  [self checkIfCompleteTouches];
 }
 
 - (void)touchesMoved:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches phase:UITouchPhaseMoved];
+  [self dispatchTouches:touches phase:UITouchPhaseMoved trackTouches:TRUE];
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches phase:UITouchPhaseEnded];
+  [self dispatchTouches:touches phase:UITouchPhaseEnded trackTouches:TRUE];
 }
 
 - (void)touchesCancelled:(NSSet*)touches withEvent:(UIEvent*)event {
-  [self dispatchTouches:touches phase:UITouchPhaseCancelled];
+  [self dispatchTouches:touches phase:UITouchPhaseCancelled trackTouches:TRUE];
+}
+
+- (BOOL)checkIfCompleteTouches {
+  NSInteger cnt = self.touchTrackerSet.count;
+  if (cnt <= 0)
+    return FALSE;
+  NSTimeInterval tsNow = [[NSDate date] timeIntervalSinceReferenceDate];
+  NSSet* tmpTrackingTouches = [self.touchTrackerSet copy];
+  NSMutableSet* set = [NSMutableSet set];
+  for (UITouch* touch in tmpTrackingTouches) {
+    NSValue* key = [NSValue valueWithPointer:(void*)touch];
+    NSNumber* expiredTime = [self.touchTrackerDict objectForKey:key];
+    if (expiredTime.doubleValue <= tsNow) {
+      [set addObject:touch];
+      [self.touchTrackerDict removeObjectForKey:key];
+      [self.touchTrackerSet removeObject:touch];
+    }
+  }
+  if (set.count > 0) {
+    [self dispatchTouches:set phase:UITouchPhaseBegan trackTouches:FALSE];
+    [self dispatchTouches:set phase:UITouchPhaseCancelled trackTouches:FALSE];
+    return TRUE;
+  }
+  return FALSE;
 }
 
 #pragma mark - Handle view resizing
@@ -707,8 +763,8 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   [self updateViewportPadding];
   [self updateViewportMetrics];
 
-  // This must run after updateViewportMetrics so that the surface creation tasks are queued after
-  // the viewport metrics update tasks.
+  // This must run after updateViewportMetrics so that the surface creation tasks are queued
+  // after the viewport metrics update tasks.
   if (firstViewBoundsUpdate)
     [self surfaceUpdated:YES];
 }
@@ -904,8 +960,8 @@ static inline blink::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* to
   const CGFloat ax4 = 47;
   const CGFloat ax5 = 53;
 
-  // We compute the scale as relative difference from size L (large, the default size), where
-  // L is assumed to have scale 1.0.
+  // We compute the scale as relative difference from size L (large, the default size),
+  // where L is assumed to have scale 1.0.
   if ([category isEqualToString:UIContentSizeCategoryExtraSmall])
     return xs / l;
   else if ([category isEqualToString:UIContentSizeCategorySmall])
@@ -976,8 +1032,8 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
       CGPoint screenLoc = [touch.window convertPoint:windowLoc toWindow:nil];
       if (CGRectContainsPoint(statusBarFrame, screenLoc)) {
         NSSet* statusbarTouches = [NSSet setWithObject:touch];
-        [self dispatchTouches:statusbarTouches phase:UITouchPhaseBegan];
-        [self dispatchTouches:statusbarTouches phase:UITouchPhaseEnded];
+        [self dispatchTouches:statusbarTouches phase:UITouchPhaseBegan trackTouches:TRUE];
+        [self dispatchTouches:statusbarTouches phase:UITouchPhaseEnded trackTouches:TRUE];
         return;
       }
     }
