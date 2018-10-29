@@ -25,6 +25,8 @@ class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner> {
 
   virtual bool RunsTasksOnCurrentThread();
 
+  void EnableMessageLoop(bool isEnable);
+  MessageLoopImpl* getMessageLoop();
   virtual ~TaskRunner();
 
   static void RunNowOrPostTask(fml::RefPtr<fml::TaskRunner> runner,
