@@ -1233,9 +1233,14 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 #define FLAG_idle_duration_micros 500
 - (void)notifyIdle:(DartApiCompletion)completion
 {
-    const int64_t now = Dart_TimelineGetMicros();
-    const int64_t deadline = now + FLAG_idle_duration_micros;
-    _shell->GetEngine()->NotifyIdle(deadline);
+    _shell->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable([engine = _shell->GetEngine()] {
+        if (engine) {
+            const int64_t now = Dart_TimelineGetMicros();
+            const int64_t deadline = now + FLAG_idle_duration_micros;
+            engine->NotifyIdle(deadline);
+        }
+    }));
+   
 }
 
 - (void)notifyMemoryWarning:(DartApiCompletion)completion
