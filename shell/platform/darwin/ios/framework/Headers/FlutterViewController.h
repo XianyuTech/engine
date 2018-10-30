@@ -67,6 +67,18 @@ FLUTTER_EXPORT
  */
 @property(strong, nonatomic) UIView* splashScreenView;
 
+
+
+typedef void (^DartApiCompletion)(NSError *,void *);
+/*
+ * Trigger memory warning for dart.
+ * */
+- (void)notifyMemoryWarning:(DartApiCompletion)completion;
+
+/*
+ * Trigger idle*/
+- (void)notifyIdle:(DartApiCompletion)completion;
+
 @end
 
 #endif  // FLUTTER_FLUTTERVIEWCONTROLLER_H_

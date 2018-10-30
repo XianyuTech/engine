@@ -22,6 +22,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/flutter_touch_mapper.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+#include "third_party/dart/runtime/include/dart_tools_api.h"
 
 static double kTouchTrackerCheckInterval = 1.f;
 
@@ -1226,6 +1227,22 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   return _pluginPublications[pluginKey];
 }
+
+#pragma mark - Garbage Collection Trigger
+
+#define FLAG_idle_duration_micros 500
+- (void)notifyIdle:(DartApiCompletion)completion
+{
+    const int64_t now = Dart_TimelineGetMicros();
+    const int64_t deadline = now + FLAG_idle_duration_micros;
+    _shell->GetEngine()->NotifyIdle(deadline);
+}
+
+- (void)notifyMemoryWarning:(DartApiCompletion)completion
+{
+    //Do nothing right now.
+}
+
 @end
 
 @implementation FlutterViewControllerRegistrar {
@@ -1283,5 +1300,7 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 - (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
   return [_flutterViewController lookupKeyForAsset:asset fromPackage:package];
 }
+
+
 
 @end
