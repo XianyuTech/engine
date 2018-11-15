@@ -63,7 +63,6 @@ static double kTouchTrackerCheckInterval = 1.f;
   shell::TouchMapper _touchMapper;
   int64_t _nextTextureId;
   BOOL _initialized;
-  BOOL _gpuOperationDisabled;
 }
 
 #pragma mark - Manage and override all designated initializers
@@ -436,9 +435,9 @@ static double kTouchTrackerCheckInterval = 1.f;
   if (appeared) {
     [self installSplashScreenViewCallback];
     _shell->GetPlatformView()->NotifyCreated();
-
   } else {
     _shell->GetPlatformView()->NotifyDestroyed();
+    [self disableGPUOperation];
   }
 }
 
@@ -475,7 +474,6 @@ static double kTouchTrackerCheckInterval = 1.f;
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.resumed"];
-
   [super viewDidAppear:animated];
 }
 
@@ -506,14 +504,12 @@ static double kTouchTrackerCheckInterval = 1.f;
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
-  [self enableGPUOperation];
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.resumed"];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
-  [self disableGPUOperation];
 }
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
@@ -529,28 +525,8 @@ static double kTouchTrackerCheckInterval = 1.f;
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.inactive"];
 }
 
-- (void)enableGPUOperation {
-  UIApplicationState state = [[UIApplication sharedApplication] applicationState];
-  if (_gpuOperationDisabled == FALSE || state != UIApplicationStateActive)
-    return;
-  [self enableMessageLoop:true forTaskRunner:@"io.flutter.gpu"];
-  [self enableMessageLoop:true forTaskRunner:@"io.flutter.io"];
-  if (_viewportMetrics.physical_width)
-    [self surfaceUpdated:YES];
-  _gpuOperationDisabled = FALSE;
-}
-
 - (void)disableGPUOperation {
-  UIApplicationState state = [[UIApplication sharedApplication] applicationState];
-  if (_gpuOperationDisabled == TRUE || state != UIApplicationStateActive)
-    return;
-  [self surfaceUpdated:NO];
   [_lifecycleChannel.get() sendMessage:@"AppLifecycleState.paused"];
-  NSString* ioRunnerKey = @"io.flutter.io";
-  NSString* gpuRunnerKey = @"io.flutter.gpu";
-  [self enableMessageLoop:false forTaskRunner:ioRunnerKey];
-  [self enableMessageLoop:false forTaskRunner:gpuRunnerKey];
-  _gpuOperationDisabled = TRUE;
   //暂时通过延时来等待GL操作结束(否则进入后台后的GL操作会闪退)
   NSDate* date = [NSDate date];
   double delayMax = 8;  //最多等8S
@@ -567,6 +543,7 @@ static double kTouchTrackerCheckInterval = 1.f;
       break;
     [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];
   }
+  [self setEnableForRunnersBatch:FALSE];
 }
 
 - (void)enableMessageLoop:(bool)isEnable forTaskRunner:(NSString*)aTaskRunnerId {
@@ -1231,21 +1208,19 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 #pragma mark - Garbage Collection Trigger
 
 #define FLAG_idle_duration_micros 500
-- (void)notifyIdle:(DartApiCompletion)completion
-{
-    _shell->GetTaskRunners().GetUITaskRunner()->PostTask(fml::MakeCopyable([engine = _shell->GetEngine()] {
+- (void)notifyIdle:(DartApiCompletion)completion {
+  _shell->GetTaskRunners().GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = _shell->GetEngine()] {
         if (engine) {
-            const int64_t now = Dart_TimelineGetMicros();
-            const int64_t deadline = now + FLAG_idle_duration_micros;
-            engine->NotifyIdle(deadline);
+          const int64_t now = Dart_TimelineGetMicros();
+          const int64_t deadline = now + FLAG_idle_duration_micros;
+          engine->NotifyIdle(deadline);
         }
-    }));
-   
+      }));
 }
 
-- (void)notifyMemoryWarning:(DartApiCompletion)completion
-{
-    //Do nothing right now.
+- (void)notifyMemoryWarning:(DartApiCompletion)completion {
+  // Do nothing right now.
 }
 
 @end
