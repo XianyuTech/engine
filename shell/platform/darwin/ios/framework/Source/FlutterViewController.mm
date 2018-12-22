@@ -23,6 +23,7 @@
 #include "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #include "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
 #include "flutter/shell/platform/darwin/ios/platform_view_ios.h"
+#include "third_party/dart/runtime/include/dart_tools_api.h"
 
 static double kTouchTrackerCheckInterval = 1.f;
 
@@ -1113,6 +1114,24 @@ constexpr CGFloat kStandardStatusBarHeight = 20.0;
 
 - (NSObject*)valuePublishedByPlugin:(NSString*)pluginKey {
   return [_engine.get() valuePublishedByPlugin:pluginKey];
+}
+
+#pragma mark - Garbage Collection Trigger
+
+#define FLAG_idle_duration_micros 500
+- (void)notifyIdle:(DartApiCompletion)completion {
+  [self getTaskRunners].GetUITaskRunner()->PostTask(
+      fml::MakeCopyable([engine = [_engine.get() shell].GetEngine()] {
+        if (engine) {
+          const int64_t now = Dart_TimelineGetMicros();
+          const int64_t deadline = now + FLAG_idle_duration_micros;
+          engine->NotifyIdle(deadline);
+        }
+      }));
+}
+
+- (void)notifyMemoryWarning:(DartApiCompletion)completion {
+  // Do nothing right now.
 }
 
 @end
