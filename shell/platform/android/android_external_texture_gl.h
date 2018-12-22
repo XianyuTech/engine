@@ -16,6 +16,7 @@ class AndroidExternalTextureGL : public flow::Texture {
   AndroidExternalTextureGL(
       int64_t id,
       const fml::jni::JavaObjectWeakGlobalRef& surfaceTexture);
+  AndroidExternalTextureGL(int64_t id, int64_t texture_id);
 
   ~AndroidExternalTextureGL() override;
 
@@ -43,6 +44,8 @@ class AndroidExternalTextureGL : public flow::Texture {
   AttachmentState state_ = AttachmentState::uninitialized;
 
   bool new_frame_ready_ = false;
+
+  bool use_out_texture_ = false;
 
   GLuint texture_name_ = 0;
 

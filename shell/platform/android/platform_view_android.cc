@@ -355,6 +355,16 @@ void PlatformViewAndroid::RegisterExternalTexture(
       std::make_shared<AndroidExternalTextureGL>(texture_id, surface_texture));
 }
 
+void PlatformViewAndroid::RegisterGLExternalTexture(int64_t texture_index,
+                                                    int64_t texture_id) {
+  RegisterTexture(
+      std::make_shared<AndroidExternalTextureGL>(texture_index, texture_id));
+}
+
+void* PlatformViewAndroid::GetContext() {
+  return android_surface_->GetContext();
+}
+
 // |shell::PlatformView|
 std::unique_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
   return std::make_unique<VsyncWaiterAndroid>(task_runners_);

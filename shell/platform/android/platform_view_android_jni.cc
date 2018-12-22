@@ -24,6 +24,9 @@
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<shell::AndroidShellHolder*>(shell_holder))
 
@@ -502,6 +505,31 @@ static void RegisterTexture(JNIEnv* env,
   );
 }
 
+static void RegisterGLTexture(JNIEnv* env,
+                              jobject jcaller,
+                              jlong shell_holder,
+                              jlong texture_index,
+                              jlong texture_id) {
+  ANDROID_SHELL_HOLDER->GetPlatformView()->RegisterGLExternalTexture(
+      static_cast<int64_t>(texture_index), static_cast<int64_t>(texture_id));
+}
+
+static jobject GetContext(JNIEnv* env, jobject jcaller, jlong shell_holder) {
+  jclass eglcontextClassLocal = env->FindClass("android/opengl/EGLContext");
+  jmethodID eglcontextConstructor =
+      env->GetMethodID(eglcontextClassLocal, "<init>", "(J)V");
+
+  void* cxt = ANDROID_SHELL_HOLDER->GetPlatformView()->GetContext();
+
+  if ((EGLContext)cxt == EGL_NO_CONTEXT) {
+    return env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                          reinterpret_cast<jlong>(EGL_NO_CONTEXT));
+  }
+
+  return env->NewObject(eglcontextClassLocal, eglcontextConstructor,
+                        reinterpret_cast<jlong>(cxt));
+}
+
 static void MarkTextureFrameAvailable(JNIEnv* env,
                                       jobject jcaller,
                                       jlong shell_holder,
@@ -689,6 +717,12 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .fnPtr = reinterpret_cast<void*>(&shell::RegisterTexture),
       },
       {
+          .name = "nativeGLRegisterTexture",
+          .signature = "(JJJ)V",
+          .fnPtr = reinterpret_cast<void*>(&shell::RegisterGLTexture),
+      },
+
+      {
           .name = "nativeMarkTextureFrameAvailable",
           .signature = "(JJ)V",
           .fnPtr = reinterpret_cast<void*>(&shell::MarkTextureFrameAvailable),
@@ -698,6 +732,12 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
           .signature = "(JJ)V",
           .fnPtr = reinterpret_cast<void*>(&shell::UnregisterTexture),
       },
+      {
+          .name = "nativeGetContext",
+          .signature = "(J)Landroid/opengl/EGLContext;",
+          .fnPtr = reinterpret_cast<void*>(&shell::GetContext),
+      },
+
   };
 
   static const JNINativeMethod callback_info_methods[] = {

@@ -39,6 +39,8 @@ class IOSSurfaceGL : public IOSSurface,
 
   bool GLContextMakeCurrent() override;
 
+  void* GetGLShareGroup() override;
+
   bool GLContextClearCurrent() override;
 
   bool GLContextPresent() override;

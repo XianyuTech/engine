@@ -36,6 +36,8 @@ class IOSSurfaceSoftware final : public IOSSurface,
   // |shell::IOSSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
 
+  void* GetGLShareGroup() override;
+
   // |shell::GPUSurfaceSoftwareDelegate|
   sk_sp<SkSurface> AcquireBackingStore(const SkISize& size) override;
 
