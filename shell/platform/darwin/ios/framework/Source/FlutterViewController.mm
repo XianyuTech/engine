@@ -9,8 +9,10 @@
 
 #include <memory>
 
+#include "flutter/common/task_runners.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
+#include "flutter/fml/message_loop_impl.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/thread_host.h"
@@ -119,6 +121,14 @@ static double kTouchTrackerCheckInterval = 1.f;
 
   _touchTrackerSet = [[NSMutableSet set] retain];
   _touchTrackerDict = [[NSMutableDictionary dictionary] retain];
+
+  fml::MessageLoopImpl* gpuLoop =
+      ((fml::TaskRunner*)[self getTaskRunners].GetGPUTaskRunner().get())->getMessageLoop();
+  gpuLoop->SetTaskLimitPerLoopRun(10);
+  fml::MessageLoopImpl* ioLoop =
+      ((fml::TaskRunner*)[self getTaskRunners].GetIOTaskRunner().get())->getMessageLoop();
+  ioLoop->SetTaskLimitPerLoopRun(10);
+
   [self setupNotificationCenterObservers];
 }
 
@@ -378,6 +388,7 @@ static double kTouchTrackerCheckInterval = 1.f;
 
 - (void)surfaceUpdated:(BOOL)appeared {
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
+  [self setEnableForRunnersBatch:YES];
   if (appeared) {
     [self installSplashScreenViewCallback];
     [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
@@ -385,6 +396,7 @@ static double kTouchTrackerCheckInterval = 1.f;
   } else {
     [_engine.get() platformView] -> NotifyDestroyed();
     [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
+    [self disableGPUOperation];
   }
 }
 
@@ -463,6 +475,56 @@ static double kTouchTrackerCheckInterval = 1.f;
   if (_viewportMetrics.physical_width)
     [self surfaceUpdated:YES];
   [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+}
+
+- (blink::TaskRunners)getTaskRunners {
+  return ([_engine.get() shell].GetTaskRunners());
+}
+
+- (void)disableGPUOperation {
+  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  //暂时通过延时来等待GL操作结束(否则进入后台后的GL操作会闪退)
+  NSDate* date = [NSDate date];
+  double delayMax = 8;  //最多等8S
+  fml::MessageLoopImpl* gpuLoop =
+      ((fml::TaskRunner*)[self getTaskRunners].GetGPUTaskRunner().get())->getMessageLoop();
+  fml::MessageLoopImpl* ioLoop =
+      ((fml::TaskRunner*)[self getTaskRunners].GetIOTaskRunner().get())->getMessageLoop();
+  while (true) {
+    //两个TaskRunner没内容了，好，可以退出
+    if (!gpuLoop->IsRunningingExpiredTasks() && !ioLoop->IsRunningingExpiredTasks())
+      break;
+    //超时退出
+    if ([[NSDate date] timeIntervalSinceDate:date] > delayMax)
+      break;
+    [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.2]];
+  }
+  [self setEnableForRunnersBatch:FALSE];
+}
+
+- (void)enableMessageLoop:(bool)isEnable forTaskRunner:(NSString*)aTaskRunnerId {
+  if ([@"io.flutter.io" caseInsensitiveCompare:aTaskRunnerId] == NSOrderedSame) {
+    fml::TaskRunner* taskRunner = (fml::TaskRunner*)[self getTaskRunners].GetIOTaskRunner().get();
+    taskRunner->EnableMessageLoop(isEnable);
+  }
+  if ([@"io.flutter.ui" caseInsensitiveCompare:aTaskRunnerId] == NSOrderedSame) {
+    fml::TaskRunner* taskRunner = (fml::TaskRunner*)[self getTaskRunners].GetUITaskRunner().get();
+    taskRunner->EnableMessageLoop(isEnable);
+  }
+  if ([@"io.flutter.gpu" caseInsensitiveCompare:aTaskRunnerId] == NSOrderedSame) {
+    fml::TaskRunner* taskRunner = (fml::TaskRunner*)[self getTaskRunners].GetGPUTaskRunner().get();
+    taskRunner->EnableMessageLoop(isEnable);
+  }
+  if ([@"io.flutter.platform" caseInsensitiveCompare:aTaskRunnerId] == NSOrderedSame) {
+    fml::TaskRunner* taskRunner =
+        (fml::TaskRunner*)[self getTaskRunners].GetPlatformTaskRunner().get();
+    taskRunner->EnableMessageLoop(isEnable);
+  }
+}
+
+- (void)setEnableForRunnersBatch:(BOOL)enable {
+  [self enableMessageLoop:enable forTaskRunner:@"io.flutter.gpu"];
+  [self enableMessageLoop:enable forTaskRunner:@"io.flutter.io"];
 }
 
 #pragma mark - Touch event handling

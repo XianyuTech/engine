@@ -24,6 +24,8 @@ class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner> {
   virtual void PostDelayedTask(fml::closure task, fml::TimeDelta delay);
 
   virtual bool RunsTasksOnCurrentThread();
+  void EnableMessageLoop(bool isEnable);
+  MessageLoopImpl* getMessageLoop();
 
   virtual ~TaskRunner();
 

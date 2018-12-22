@@ -42,6 +42,18 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
 
   void DoTerminate();
 
+  void EnableMessageLoop(bool isEnable) { is_loop_enabled_ = isEnable; }
+
+  void SetTaskLimitPerLoopRun(int task_limit_per_looprun) {
+    task_limit_per_looprun_ = task_limit_per_looprun;
+  }
+
+  inline bool IsMessageLoopEnabled() { return is_loop_enabled_; }
+
+  inline bool IsRunningingExpiredTasks() {
+    return is_runninging_expired_tasks_;
+  }
+
   // Exposed for the embedder shell which allows clients to poll for events
   // instead of dedicating a thread to the message loop.
   void RunExpiredTasksNow();
@@ -73,12 +85,15 @@ class MessageLoopImpl : public fml::RefCountedThreadSafe<MessageLoopImpl> {
 
   using DelayedTaskQueue = std::
       priority_queue<DelayedTask, std::deque<DelayedTask>, DelayedTaskCompare>;
-
+  bool is_loop_enabled_ = true;
   std::map<intptr_t, fml::closure> task_observers_;
   std::mutex delayed_tasks_mutex_;
   DelayedTaskQueue delayed_tasks_;
   size_t order_;
   std::atomic_bool terminated_;
+
+  bool is_runninging_expired_tasks_;
+  int task_limit_per_looprun_;
 
   void RegisterTask(fml::closure task, fml::TimePoint target_time);
 
