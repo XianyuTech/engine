@@ -21,6 +21,8 @@ using tonic::DartInvoke;
 using tonic::DartPersistentValue;
 using tonic::ToDart;
 
+char sSnapshotPath[1024] = {0};
+
 namespace blink {
 
 namespace {
@@ -301,6 +303,18 @@ void InstantiateImageCodec(Dart_NativeArguments args) {
       }));
 }
 
+void NotifySaveScreenshot(Dart_NativeArguments args) {
+  Dart_Handle exception = nullptr;
+  const std::string snapshotPath =
+      tonic::DartConverter<std::string>::FromArguments(args, 0, exception);
+  if (exception) {
+    Dart_ThrowException(exception);
+    return;
+  }
+  memset(sSnapshotPath, 0, sizeof(sSnapshotPath) / sizeof(sSnapshotPath[0]));
+  memcpy(sSnapshotPath, snapshotPath.c_str(), snapshotPath.length());
+}
+
 bool copy_to(SkBitmap* dst, SkColorType dstColorType, const SkBitmap& src) {
   SkPixmap srcPM;
   if (!src.peekPixels(&srcPM)) {
@@ -547,6 +561,7 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
 void Codec::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
       {"instantiateImageCodec", InstantiateImageCodec, 4, true},
+      {"notifySaveScreenshot", NotifySaveScreenshot, 1, true},
   });
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }

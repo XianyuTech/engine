@@ -14,6 +14,8 @@
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
+extern char sSnapshotPath[1024];
+
 namespace shell {
 
 // The rasterizer will tell Skia to purge cached resources that have not been
@@ -188,6 +190,26 @@ bool Rasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
     frame->Submit();
     if (external_view_embedder != nullptr) {
       external_view_embedder->SubmitFrame(surface_->GetContext());
+    }
+    if (strlen(sSnapshotPath) > 0) {
+      std::string snapshotPath = std::string(sSnapshotPath);
+      sk_sp<SkSurface> skiaSurface = frame->SkiaSurface();
+      sk_sp<SkImage> cpu_image =
+          skiaSurface->makeImageSnapshot()->makeRasterImage();
+      fml::TaskRunner::RunNowOrPostTask(
+          task_runners_.GetIOTaskRunner(), [cpu_image, snapshotPath]() {
+            sk_sp<SkData> pngdata =
+                cpu_image->encodeToData(SkEncodedImageFormat::kPNG, 0);
+            SkFILEWStream png_file(snapshotPath.c_str());
+            png_file.write(pngdata->data(), pngdata->size());
+          });
+      fml::TaskRunner::RunNowOrPostTask(
+          task_runners_.GetUITaskRunner(), [snapshotPath]() {
+            if (strcmp(snapshotPath.c_str(), sSnapshotPath) == 0) {
+              memset(sSnapshotPath, 0,
+                     sizeof(sSnapshotPath) / sizeof(sSnapshotPath[0]));
+            }
+          });
     }
     FireNextFrameCallbackIfPresent();
 

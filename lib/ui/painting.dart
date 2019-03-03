@@ -1637,6 +1637,8 @@ Future<Codec> instantiateImageCodec(Uint8List list, {
 String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, double decodedCacheRatioCap)
   native 'instantiateImageCodec';
 
+void notifySaveScreenshot(String snapshotPath) native 'notifySaveScreenshot';
+
 /// Loads a single image frame from a byte array into an [Image] object.
 ///
 /// This is a convenience wrapper around [instantiateImageCodec].
