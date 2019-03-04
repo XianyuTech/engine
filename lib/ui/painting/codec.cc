@@ -22,6 +22,7 @@ using tonic::DartPersistentValue;
 using tonic::ToDart;
 
 char sSnapshotPath[1024] = {0};
+extern void saveFrameWithPath(const char* snapshotPath);
 
 namespace blink {
 
@@ -313,6 +314,7 @@ void NotifySaveScreenshot(Dart_NativeArguments args) {
   }
   memset(sSnapshotPath, 0, sizeof(sSnapshotPath) / sizeof(sSnapshotPath[0]));
   memcpy(sSnapshotPath, snapshotPath.c_str(), snapshotPath.length());
+  saveFrameWithPath(sSnapshotPath);
 }
 
 bool copy_to(SkBitmap* dst, SkColorType dstColorType, const SkBitmap& src) {

@@ -14,7 +14,7 @@
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
-extern char sSnapshotPath[1024];
+fml::WeakPtr<shell::Rasterizer> sRasterizer;
 
 namespace shell {
 
@@ -33,6 +33,7 @@ Rasterizer::Rasterizer(
       compositor_context_(std::move(compositor_context)),
       weak_factory_(this) {
   FML_DCHECK(compositor_context_);
+  sRasterizer = GetWeakPtr();
 }
 
 Rasterizer::~Rasterizer() = default;
@@ -190,26 +191,6 @@ bool Rasterizer::DrawToSurface(flow::LayerTree& layer_tree) {
     frame->Submit();
     if (external_view_embedder != nullptr) {
       external_view_embedder->SubmitFrame(surface_->GetContext());
-    }
-    if (strlen(sSnapshotPath) > 0) {
-      std::string snapshotPath = std::string(sSnapshotPath);
-      sk_sp<SkSurface> skiaSurface = frame->SkiaSurface();
-      sk_sp<SkImage> cpu_image =
-          skiaSurface->makeImageSnapshot()->makeRasterImage();
-      fml::TaskRunner::RunNowOrPostTask(
-          task_runners_.GetIOTaskRunner(), [cpu_image, snapshotPath]() {
-            sk_sp<SkData> pngdata =
-                cpu_image->encodeToData(SkEncodedImageFormat::kPNG, 0);
-            SkFILEWStream png_file(snapshotPath.c_str());
-            png_file.write(pngdata->data(), pngdata->size());
-          });
-      fml::TaskRunner::RunNowOrPostTask(
-          task_runners_.GetUITaskRunner(), [snapshotPath]() {
-            if (strcmp(snapshotPath.c_str(), sSnapshotPath) == 0) {
-              memset(sSnapshotPath, 0,
-                     sizeof(sSnapshotPath) / sizeof(sSnapshotPath[0]));
-            }
-          });
     }
     FireNextFrameCallbackIfPresent();
 
@@ -392,3 +373,35 @@ Rasterizer::Screenshot::Screenshot(const Screenshot& other) = default;
 Rasterizer::Screenshot::~Screenshot() = default;
 
 }  // namespace shell
+
+void saveFrameWithPath(const char* snapshotPath) {
+  if (strlen(snapshotPath) > 0) {
+    std::string sPath = std::string(snapshotPath);
+
+    shell::Rasterizer* rasterizer = sRasterizer.get();
+    if (rasterizer == nullptr) {
+      return;
+    }
+    fml::TaskRunner::RunNowOrPostTask(
+        rasterizer->task_runners_.GetGPUTaskRunner(), [rasterizer, sPath]() {
+          auto frame = rasterizer->surface_->AcquireFrame(
+              rasterizer->last_layer_tree_->frame_size());
+
+          if (frame == nullptr) {
+            return;
+          }
+
+          sk_sp<SkSurface> skiaSurface = frame->SkiaSurface();
+          sk_sp<SkImage> cpu_image =
+              skiaSurface->makeImageSnapshot()->makeRasterImage();
+          fml::TaskRunner::RunNowOrPostTask(
+              rasterizer->task_runners_.GetIOTaskRunner(),
+              [cpu_image, sPath]() {
+                sk_sp<SkData> pngdata =
+                    cpu_image->encodeToData(SkEncodedImageFormat::kPNG, 0);
+                SkFILEWStream png_file(sPath.c_str());
+                png_file.write(pngdata->data(), pngdata->size());
+              });
+        });
+  }
+}

@@ -73,11 +73,14 @@ class Rasterizer final : public blink::SnapshotDelegate {
     return compositor_context_.get();
   }
 
- private:
-  blink::TaskRunners task_runners_;
   std::unique_ptr<Surface> surface_;
-  std::unique_ptr<flow::CompositorContext> compositor_context_;
+
   std::unique_ptr<flow::LayerTree> last_layer_tree_;
+
+  blink::TaskRunners task_runners_;
+
+ private:
+  std::unique_ptr<flow::CompositorContext> compositor_context_;
   fml::closure next_frame_callback_;
   fml::WeakPtrFactory<Rasterizer> weak_factory_;
 
