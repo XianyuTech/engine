@@ -377,13 +377,16 @@ Rasterizer::Screenshot::~Screenshot() = default;
 void saveFrameWithPath(const char* snapshotPath) {
   if (strlen(snapshotPath) > 0) {
     std::string sPath = std::string(snapshotPath);
-
-    shell::Rasterizer* rasterizer = sRasterizer.get();
-    if (rasterizer == nullptr) {
+    shell::Rasterizer* rast = sRasterizer.get();
+    if (rast == nullptr)
       return;
-    }
     fml::TaskRunner::RunNowOrPostTask(
-        rasterizer->task_runners_.GetGPUTaskRunner(), [rasterizer, sPath]() {
+        rast->task_runners_.GetGPUTaskRunner(), [sPath]() {
+          shell::Rasterizer* rasterizer = sRasterizer.get();
+          if (rasterizer == nullptr || rasterizer->surface_.get() == nullptr ||
+              rasterizer->last_layer_tree_.get() == nullptr) {
+            return;
+          }
           auto frame = rasterizer->surface_->AcquireFrame(
               rasterizer->last_layer_tree_->frame_size());
 
