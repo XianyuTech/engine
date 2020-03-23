@@ -237,6 +237,18 @@ bool RuntimeController::NotifyIdle(int64_t deadline) {
   return true;
 }
 
+bool RuntimeController::NotifyGC(int64_t flag) {
+  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
+  if (!root_isolate) {
+    return false;
+  }
+
+  tonic::DartState::Scope scope(root_isolate);
+
+  Dart_NotifyGC(flag);
+  return true;
+}
+
 bool RuntimeController::DispatchPlatformMessage(
     fml::RefPtr<PlatformMessage> message) {
   if (auto* window = GetWindowIfAvailable()) {

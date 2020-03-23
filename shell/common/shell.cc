@@ -451,6 +451,15 @@ void Shell::NotifyLowMemoryWarning() const {
   // to purge them.
 }
 
+void Shell::NotifyGC(int64_t flag) const {
+  task_runners_.GetUITaskRunner()->PostTask(
+      [engine = weak_engine_, lamda_flag = flag]() {
+        if (engine) {
+          engine->NotifyGC(lamda_flag);
+        }
+      });
+}
+
 void Shell::RunEngine(RunConfiguration run_configuration) {
   RunEngine(std::move(run_configuration), nullptr);
 }

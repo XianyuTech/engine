@@ -471,6 +471,13 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void NotifyIdle(int64_t deadline);
 
   //----------------------------------------------------------------------------
+  /// @brief      Force Dart VM to do garbage collection with certain flags.
+  ///
+  /// @param[in]  flag  see
+  /// https://github.com/dart-lang/sdk/blob/master/runtime/vm/heap/heap.h#L57
+  void NotifyGC(int64_t flag);
+
+  //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a
   ///             specific frame to be rendered. This is because Dart code only
   ///             runs on the UI task runner. That is only a small part of the

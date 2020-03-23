@@ -181,4 +181,9 @@ fml::WeakPtr<PlatformViewAndroid> AndroidShellHolder::GetPlatformView() {
   return platform_view_;
 }
 
+Shell* AndroidShellHolder::GetShell() {
+  FML_DCHECK(shell_.get());
+  return shell_.get();
+}
+
 }  // namespace flutter

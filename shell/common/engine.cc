@@ -236,6 +236,11 @@ void Engine::NotifyIdle(int64_t deadline) {
   runtime_controller_->NotifyIdle(deadline);
 }
 
+void Engine::NotifyGC(int64_t flag) {
+  TRACE_EVENT0("flutter", "Engine::NotifyGC");
+  runtime_controller_->NotifyGC(flag);
+}
+
 std::pair<bool, uint32_t> Engine::GetUIIsolateReturnCode() {
   return runtime_controller_->GetRootIsolateReturnCode();
 }

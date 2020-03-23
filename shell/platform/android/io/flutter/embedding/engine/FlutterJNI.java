@@ -210,6 +210,10 @@ public class FlutterJNI {
 
   private native void nativeDestroy(long nativePlatformViewId);
 
+  public  native void notifyGC(long nativePlatformViewId, long flag);
+  
+  public  native void notifyMemoryPressure(long nativePlatformViewId);
+
   private void ensureNotAttachedToNative() {
     if (nativePlatformViewId != null) {
       throw new RuntimeException(

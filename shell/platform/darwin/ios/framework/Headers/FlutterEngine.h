@@ -198,6 +198,22 @@ FLUTTER_EXPORT
 - (void)ensureSemanticsEnabled;
 
 /**
+ * Notify engine/dart side to release unused memory under memory
+ * pressure.
+ *
+ * @param notification Notification from the system. Use nil when trigger manually.
+ */
+- (void)onMemoryWarning:(NSNotification*)notification;
+
+/**
+ * Force the Dart VM to do garbage collection with certain flags.
+ *
+ * @param flag See https://github.com/dart-lang/sdk/blob/master/
+ *             runtime/vm/heap/heap.h#L57
+ */
+- (void)notifyGC:(int64_t)flag;
+
+/**
  * Sets the `FlutterViewController` for this instance.  The FlutterEngine must be
  * running (e.g. a successful call to `-runWithEntrypoint:` or `-runWithEntrypoint:libraryURI`)
  * before calling this method. Callers may pass nil to remove the viewController

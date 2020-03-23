@@ -204,6 +204,11 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
   self.iosPlatformView->SetSemanticsEnabled(true);
 }
 
+- (void)notifyGC:(int64_t)flag {
+  FML_DCHECK(_shell);
+  _shell->NotifyGC(flag);
+}
+
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
   _viewController =

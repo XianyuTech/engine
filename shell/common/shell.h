@@ -284,6 +284,13 @@ class Shell final : public PlatformView::Delegate,
   ///             the rasterizer cache is purged.
   void NotifyLowMemoryWarning() const;
 
+  // Embedders can call this when they want to do garbage collection on demand.
+  //
+  //----------------------------------------------------------------------------
+  /// @param[in]  flag  see
+  /// https://github.com/dart-lang/sdk/blob/master/runtime/vm/heap/heap.h#L57
+  void NotifyGC(int64_t flag) const;
+
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to check if all shell subcomponents are
   ///             initialized. It is the embedder's responsibility to make this

@@ -333,6 +333,13 @@ class RuntimeController final : public WindowClient {
   bool NotifyIdle(int64_t deadline);
 
   //----------------------------------------------------------------------------
+  /// @brief      Force the Dart VM to do garbage collection with certain flags.
+  ///
+  /// @return     If the gc operation was forwarded to the running isolate.
+  ///
+  bool NotifyGC(int64_t flag);
+  
+  //----------------------------------------------------------------------------
   /// @brief      Returns if the root isolate is running. The isolate must be
   ///             transitioned to the running phase manually. The isolate can
   ///             stop running if it terminates execution on its own.

@@ -163,6 +163,19 @@ static void DestroyJNI(JNIEnv* env, jobject jcaller, jlong shell_holder) {
   delete ANDROID_SHELL_HOLDER;
 }
 
+static void NotifyGC(JNIEnv* env,
+                     jobject jcaller,
+                     jlong shell_holder,
+                     jlong flag) {
+  ANDROID_SHELL_HOLDER->GetShell()->NotifyGC(flag);
+}
+
+static void NotifyMemoryPressure(JNIEnv* env,
+                                 jobject jcaller,
+                                 jlong shell_holder) {
+  ANDROID_SHELL_HOLDER->GetShell()->NotifyLowMemoryWarning();
+}
+
 static void SurfaceCreated(JNIEnv* env,
                            jobject jcaller,
                            jlong shell_holder,
@@ -496,6 +509,16 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeDestroy",
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&DestroyJNI),
+      },
+      {
+          .name = "notifyGC",
+          .signature = "(JJ)V",
+          .fnPtr = reinterpret_cast<void*>(&NotifyGC),
+      },
+      {
+          .name = "notifyMemoryPressure",
+          .signature = "(J)V",
+          .fnPtr = reinterpret_cast<void*>(&NotifyMemoryPressure),
       },
       {
           .name = "nativeRunBundleAndSnapshotFromLibrary",
