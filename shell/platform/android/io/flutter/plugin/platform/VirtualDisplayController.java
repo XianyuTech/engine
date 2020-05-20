@@ -11,11 +11,10 @@ import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewTreeObserver;
-import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import io.flutter.view.TextureRegistry;
 
 @TargetApi(Build.VERSION_CODES.KITKAT_WATCH)
@@ -62,7 +61,7 @@ class VirtualDisplayController {
   private final TextureRegistry.SurfaceTextureEntry textureEntry;
   private final OnFocusChangeListener focusChangeListener;
   private VirtualDisplay virtualDisplay;
-  @VisibleForTesting SingleViewPresentation presentation;
+  private SingleViewPresentation presentation;
   private Surface surface;
 
   private VirtualDisplayController(

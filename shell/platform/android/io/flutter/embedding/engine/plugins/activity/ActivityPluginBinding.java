@@ -6,8 +6,8 @@ package io.flutter.embedding.engine.plugins.activity;
 
 import android.app.Activity;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import io.flutter.plugin.common.PluginRegistry;
 
 /**

@@ -4,7 +4,7 @@
 
 package io.flutter;
 
-import androidx.annotation.NonNull;
+import android.support.annotation.NonNull;
 
 /**
  * Port of {@link android.util.Log} that only logs in {@link io.flutter.BuildConfig#DEBUG} mode and

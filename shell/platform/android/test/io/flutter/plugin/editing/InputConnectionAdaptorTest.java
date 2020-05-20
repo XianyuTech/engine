@@ -10,7 +10,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.text.Editable;
 import android.text.InputType;
@@ -28,6 +28,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowClipboardManager;
 
 @Config(manifest = Config.NONE, sdk = 27, shadows = ShadowClipboardManager.class)
@@ -70,8 +71,8 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformContextMenuAction_cut() {
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+    ShadowClipboardManager clipboardManager =
+        Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.CLIPBOARD_SERVICE));
     int selStart = 6;
     int selEnd = 11;
     Editable editable = sampleEditable(selStart, selEnd);
@@ -88,8 +89,8 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformContextMenuAction_copy() {
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+    ShadowClipboardManager clipboardManager =
+        Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.CLIPBOARD_SERVICE));
     int selStart = 6;
     int selEnd = 11;
     Editable editable = sampleEditable(selStart, selEnd);
@@ -108,8 +109,8 @@ public class InputConnectionAdaptorTest {
 
   @Test
   public void testPerformContextMenuAction_paste() {
-    ClipboardManager clipboardManager =
-        RuntimeEnvironment.application.getSystemService(ClipboardManager.class);
+    ShadowClipboardManager clipboardManager =
+        Shadow.extract(RuntimeEnvironment.application.getSystemService(Context.CLIPBOARD_SERVICE));
     String textToBePasted = "deadbeef";
     clipboardManager.setText(textToBePasted);
     Editable editable = sampleEditable(0, 0);
