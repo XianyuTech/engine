@@ -544,8 +544,14 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 #pragma mark - Surface creation and teardown updates
 
 - (void)surfaceUpdated:(BOOL)appeared {
-  // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and raster
-  // thread.
+    UIApplicationState appState = [UIApplication sharedApplication].applicationState;
+    if (appState == UIApplicationStateActive) {
+        [self _innerSurfaceUpdated:appeared];
+    }
+}
+
+- (void)_innerSurfaceUpdated:(BOOL)appeared {
+  // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
     [self installFirstFrameCallback];
     [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
@@ -588,7 +594,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
   }
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 
   [super viewWillAppear:animated];
 }
@@ -598,14 +604,14 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   [self onLocaleUpdated:nil];
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
 
   [super viewDidAppear:animated];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillDisappear");
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.inactive"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 
   [super viewWillDisappear:animated];
 }
@@ -613,7 +619,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
   [self surfaceUpdated:NO];
-  [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.paused"];
+  [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
   [self flushOngoingTouches];
 
   [super viewDidDisappear:animated];
@@ -695,6 +701,11 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   // Accessing self.view will create the view. Check whether the view is organically loaded
   // first before checking whether the view is attached to window.
   if (self.isViewLoaded && self.view.window) {
+    UIApplicationState appState = [UIApplication sharedApplication].applicationState;
+    if ( ([state isEqualToString:@"AppLifecycleState.resumed"] || [state isEqualToString:@"AppLifecycleState.inactive"])
+        && (appState != UIApplicationStateActive)) {
+        return;
+    }
     [[_engine.get() lifecycleChannel] sendMessage:state];
   }
 }
