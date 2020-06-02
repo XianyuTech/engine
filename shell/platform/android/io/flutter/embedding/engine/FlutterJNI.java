@@ -28,6 +28,8 @@ import java.nio.ByteBuffer;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import io.flutter.plugin.external_adapter_image.ExternalAdapterImageProvider;
+
 /**
  * Interface between Flutter embedding's Java code and Flutter engine's C/C++ code.
  *
@@ -813,4 +815,18 @@ public class FlutterJNI {
   public interface AsyncWaitForVsyncDelegate {
     void asyncWaitForVsync(final long cookie);
   }
+
+  private static ExternalAdapterImageProvider externalAdapterImageProvider;
+  public static void installExternalAdapterImageProvider(@NonNull final ExternalAdapterImageProvider provider) {
+    if (provider != null) {
+      externalAdapterImageProvider = provider;
+      notifyExternalAdapterImageProviderInstalled();
+    }
+  }
+
+  public static ExternalAdapterImageProvider getExternalAdapterImageProvider() {
+    return externalAdapterImageProvider;
+  }
+
+  private static native void notifyExternalAdapterImageProviderInstalled();
 }

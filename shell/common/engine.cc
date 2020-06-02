@@ -17,6 +17,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/fml/unique_fd.h"
 #include "flutter/lib/snapshot/snapshot.h"
+#include "flutter/lib/ui/external_adapter_image/external_adapter_image_codec.h"
 #include "flutter/lib/ui/text/font_collection.h"
 #include "flutter/shell/common/animator.h"
 #include "flutter/shell/common/platform_view.h"
@@ -56,6 +57,9 @@ Engine::Engine(Delegate& delegate,
                      io_manager),
       task_runners_(std::move(task_runners)),
       weak_factory_(this) {
+  InitializeExternalAdapterImageManager(
+      task_runners, vm.GetConcurrentWorkerTaskRunner(), io_manager);
+
   // Runtime controller is initialized here because it takes a reference to this
   // object as its delegate. The delegate may be called in the constructor and
   // we want to be fully initilazed by that point.

@@ -1,0 +1,16 @@
+external_adapter_image_public_headers = get_path_info(["ExternalAdapterImage.h"], "abspath")
+
+external_adapter_image_sources = [
+  "//flutter/lib/ui/external_adapter_image/external_adapter_image_decode_coordinator.cc",
+  "//flutter/lib/ui/external_adapter_image/external_adapter_image_decode_coordinator.h",
+  "//flutter/lib/ui/external_adapter_image/external_adapter_image_codec.cc",
+  "//flutter/lib/ui/external_adapter_image/external_adapter_image_codec.h",
+  "//flutter/lib/ui/external_adapter_image/ExternalAdapterImage.h",
+]
+
+if (is_ios) {
+
+}
+else if (is_android) {
+
+}

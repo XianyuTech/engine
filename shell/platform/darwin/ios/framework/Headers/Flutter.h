@@ -58,6 +58,7 @@
 #include "FlutterCodecs.h"
 #include "FlutterDartProject.h"
 #include "FlutterEngine.h"
+#include "FlutterExternalAdapterImageProvider.h"
 #include "FlutterHeadlessDartRunner.h"
 #include "FlutterMacros.h"
 #include "FlutterPlatformViews.h"

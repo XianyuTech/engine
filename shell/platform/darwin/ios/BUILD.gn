@@ -33,9 +33,32 @@ _flutter_framework_headers = [
   "framework/Headers/FlutterPlugin.h",
   "framework/Headers/FlutterPluginAppLifeCycleDelegate.h",
   "framework/Headers/FlutterViewController.h",
+  "framework/Headers/FlutterExternalAdapterImageProvider.h",
 ]
 
 _flutter_framework_headers_copy_dir = "$_flutter_framework_dir/Headers"
+
+source_set("flutter_framework_arc") {
+  sources = [
+    "framework/Headers/FlutterExternalAdapterImageProvider.h",
+    "framework/Source/FlutterExternalAdapterImageDelegate.h",
+    "framework/Source/FlutterExternalAdapterImageDelegate.mm",
+  ]
+
+  deps = [
+    "//flutter/lib/ui",
+  ]
+
+  public_configs = [ "//flutter:config" ]
+
+  defines = [ "FLUTTER_FRAMEWORK=1" ]
+
+  if (shell_enable_metal) {
+    defines += [ "FLUTTER_SHELL_ENABLE_METAL=1" ]
+  }
+
+  cflags = [ "-fobjc-arc", "-stdlib=libc++" ]
+}
 
 shared_library("create_flutter_framework_dylib") {
   visibility = [ ":*" ]
@@ -119,6 +142,7 @@ shared_library("create_flutter_framework_dylib") {
     "//flutter/shell/platform/darwin/common",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//third_party/skia",
+    ":flutter_framework_arc",
   ]
 
   public_configs = [ "//flutter:config" ]

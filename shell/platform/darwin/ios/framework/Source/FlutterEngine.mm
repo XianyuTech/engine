@@ -19,6 +19,7 @@
 #include "flutter/shell/platform/darwin/common/command_line.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterExternalAdapterImageDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
@@ -207,6 +208,10 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 - (void)notifyGC:(int64_t)flag {
   FML_DCHECK(_shell);
   _shell->NotifyGC(flag);
+}
+
++ (void)installExternalAdapterImageProvider:(id<FlutterExternalAdapterImageProvider>)provider {
+  flutter::InstallFlutterExternalAdapterImageProvider(provider);
 }
 
 - (void)setViewController:(FlutterViewController*)viewController {

@@ -39,6 +39,8 @@ class CanvasImage final : public RefCountedDartWrappable<CanvasImage> {
     image_ = std::move(image);
   }
 
+  flutter::SkiaGPUObject<SkImage>& gpuImageObject() { return image_; }
+
   size_t GetAllocationSize() override;
 
   static void RegisterNatives(tonic::DartLibraryNatives* natives);

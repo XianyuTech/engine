@@ -31,6 +31,8 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.flutter.plugin.external_adapter_image.*;
+
 /**
  * A single Flutter execution environment.
  *
@@ -436,5 +438,9 @@ public class FlutterEngine {
   public interface EngineLifecycleListener {
     /** Lifecycle callback invoked before a hot restart of the Flutter engine. */
     void onPreEngineRestart();
+  }
+
+  public static void installExternalAdapterImageProvider(@NonNull ExternalAdapterImageProvider provider) {
+    FlutterJNI.installExternalAdapterImageProvider(provider);
   }
 }

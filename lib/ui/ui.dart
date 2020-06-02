@@ -38,3 +38,4 @@ part 'pointer.dart';
 part 'semantics.dart';
 part 'text.dart';
 part 'window.dart';
+part 'external_adapter_image/external_adapter_image.dart';

@@ -16,6 +16,18 @@ shell_gpu_configuration("android_gpu_configuration") {
   enable_metal = false
 }
 
+android_external_adapter_image_sources = [
+  "android_external_adapter_image_jni.cc",
+  "android_external_adapter_image_jni.h",
+  "android_external_adapter_image.cc",
+  "android_external_adapter_image.h",
+]
+
+android_external_adapter_image_sources_java = [
+  "io/flutter/plugin/external_adapter_image/ExternalAdapterImageBridge.java",
+  "io/flutter/plugin/external_adapter_image/ExternalAdapterImageProvider.java",
+]
+
 shared_library("flutter_shell_native") {
   visibility = [ ":*" ]
 
@@ -54,6 +66,8 @@ shared_library("flutter_shell_native") {
     "vsync_waiter_android.h",
   ]
 
+  sources += android_external_adapter_image_sources
+
   deps = [
     ":android_gpu_configuration",
     ":icudtl_object",
@@ -87,6 +101,7 @@ shared_library("flutter_shell_native") {
     "android",
     "EGL",
     "GLESv2",
+    "jnigraphics",
   ]
 
   ldflags = [ "-Wl,--version-script=" + rebase_path("android_exports.lst") ]
@@ -248,6 +263,7 @@ action("flutter_shell_java") {
   sources = android_java_sources
 
   sources += get_target_outputs(":gen_android_build_config_java")
+  sources += android_external_adapter_image_sources_java
 
   outputs = [
     depfile,

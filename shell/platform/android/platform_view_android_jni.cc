@@ -23,6 +23,8 @@
 #include "flutter/shell/platform/android/apk_asset_provider.h"
 #include "flutter/shell/platform/android/flutter_main.h"
 
+#include "flutter/shell/platform/android/android_external_adapter_image.h"
+
 #define ANDROID_SHELL_HOLDER \
   (reinterpret_cast<AndroidShellHolder*>(shell_holder))
 
@@ -497,6 +499,11 @@ static void InvokePlatformMessageEmptyResponseCallback(JNIEnv* env,
       );
 }
 
+static void NotifyExternalAdapterImageProviderInstalled(JNIEnv* env,
+                                                        jclass jcaller) {
+  InstallFlutterExternalAdapterImageProvider(env);
+}
+
 bool RegisterApi(JNIEnv* env) {
   static const JNINativeMethod flutter_jni_methods[] = {
       // Start of methods from FlutterJNI
@@ -614,6 +621,12 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeUnregisterTexture",
           .signature = "(JJ)V",
           .fnPtr = reinterpret_cast<void*>(&UnregisterTexture),
+      },
+      {
+          .name = "notifyExternalAdapterImageProviderInstalled",
+          .signature = "()V",
+          .fnPtr = reinterpret_cast<void*>(
+              &NotifyExternalAdapterImageProviderInstalled),
       },
 
       // Methods for Dart callback functionality.

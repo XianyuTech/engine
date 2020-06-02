@@ -10,6 +10,7 @@
 
 #include "FlutterBinaryMessenger.h"
 #include "FlutterDartProject.h"
+#include "FlutterExternalAdapterImageProvider.h"
 #include "FlutterMacros.h"
 #include "FlutterPlugin.h"
 #include "FlutterTexture.h"
@@ -212,6 +213,11 @@ FLUTTER_EXPORT
  *             runtime/vm/heap/heap.h#L57
  */
 - (void)notifyGC:(int64_t)flag;
+
+/**
+ * Install an external image provider.
+ */
++ (void)installExternalAdapterImageProvider:(id<FlutterExternalAdapterImageProvider>)provider;
 
 /**
  * Sets the `FlutterViewController` for this instance.  The FlutterEngine must be
