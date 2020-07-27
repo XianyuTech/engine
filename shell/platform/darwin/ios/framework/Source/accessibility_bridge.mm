@@ -162,6 +162,8 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
 
 @end
 
+static std::vector<SemanticsObject*> focusedAccessibilityElements;
+
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
 }
@@ -466,6 +468,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     [self bridge] -> DispatchSemanticsAction([self uid],
                                              flutter::SemanticsAction::kDidGainAccessibilityFocus);
   }
+  focusedAccessibilityElements.push_back(self);
 }
 
 - (void)accessibilityElementDidLoseFocus {
@@ -475,6 +478,7 @@ flutter::SemanticsAction GetSemanticsActionForScrollDirection(
     [self bridge] -> DispatchSemanticsAction([self uid],
                                              flutter::SemanticsAction::kDidLoseAccessibilityFocus);
   }
+  focusedAccessibilityElements.erase(std::remove(focusedAccessibilityElements.begin(), focusedAccessibilityElements.end(), self),focusedAccessibilityElements.end());
 }
 
 @end
@@ -711,6 +715,13 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
   [accessibility_channel_.get() setMessageHandler:^(id message, FlutterReply reply) {
     HandleEvent((NSDictionary*)message);
   }];
+  for (std::vector<SemanticsObject*>::iterator it = focusedAccessibilityElements.begin(); it < focusedAccessibilityElements.end(); it++) {
+    SemanticsObject *object = (*it);
+    object.bridge = GetWeakPtr();
+    for(SemanticsObject *child in object.children){
+      child.bridge = GetWeakPtr();
+    }
+  }
 }
 
 AccessibilityBridge::~AccessibilityBridge() {

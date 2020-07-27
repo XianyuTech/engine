@@ -39,10 +39,14 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
 void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
+  BOOL accessibilityResetted = false;
   if (ios_surface_ || !owner_controller) {
     NotifyDestroyed();
     ios_surface_.reset();
-    accessibility_bridge_.reset();
+    if (accessibility_bridge_) {
+      this->SetSemanticsEnabled(false);  // Reset the bridge and need to notify DartVM to update
+      accessibilityResetted = true;
+    }
   }
   owner_controller_ = owner_controller;
 
@@ -59,7 +63,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
                                                      }] retain]);
 
   if (owner_controller_ && [owner_controller_.get() isViewLoaded]) {
-    this->attachView();
+    this->attachView(accessibilityResetted);
   }
   // Do not call `NotifyCreated()` here - let FlutterViewController take care
   // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
@@ -67,7 +71,7 @@ void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController>
   // a framebuffer that will not be able to completely attach.
 }
 
-void PlatformViewIOS::attachView() {
+void PlatformViewIOS::attachView(bool accessibilityResetted) {
   FML_DCHECK(owner_controller_);
   ios_surface_ =
       [static_cast<FlutterView*>(owner_controller_.get().view) createSurface:ios_context_];
@@ -76,8 +80,14 @@ void PlatformViewIOS::attachView() {
   if (accessibility_bridge_) {
     accessibility_bridge_.reset(
         new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                [owner_controller_.get() platformViewsController]));
+                                [owner_controller.get() platformViewsController]));
+  }else if(accessibilityResetted){
+    accessibility_bridge_ = std::make_unique<AccessibilityBridge>(static_cast<FlutterView*>(owner_controller_.get().view), this,[owner_controller_.get() platformViewsController]);
   }
+  // Do not call `NotifyCreated()` here - let FlutterViewController take care
+  // of that when its Viewport is sized.  If `NotifyCreated()` is called here,
+  // it can occasionally get invoked before the viewport is sized resulting in
+  // a framebuffer that will not be able to completely attach.
 }
 
 PointerDataDispatcherMaker PlatformViewIOS::GetDispatcherMaker() {
