@@ -80,7 +80,7 @@ void PlatformViewIOS::attachView(bool accessibilityResetted) {
   if (accessibility_bridge_) {
     accessibility_bridge_.reset(
         new AccessibilityBridge(static_cast<FlutterView*>(owner_controller_.get().view), this,
-                                [owner_controller.get() platformViewsController]));
+                                [owner_controller_.get() platformViewsController]));
   }else if(accessibilityResetted){
     accessibility_bridge_ = std::make_unique<AccessibilityBridge>(static_cast<FlutterView*>(owner_controller_.get().view), this,[owner_controller_.get() platformViewsController]);
   }
