@@ -718,9 +718,6 @@ AccessibilityBridge::AccessibilityBridge(UIView* view,
   for (std::vector<SemanticsObject*>::iterator it = focusedAccessibilityElements.begin(); it < focusedAccessibilityElements.end(); it++) {
     SemanticsObject *object = (*it);
     object.bridge = GetWeakPtr();
-    for(SemanticsObject *child in object.children){
-      child.bridge = GetWeakPtr();
-    }
   }
 }
 
