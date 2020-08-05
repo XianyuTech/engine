@@ -170,6 +170,22 @@ shared_library("create_flutter_framework_dylib") {
     "AudioToolbox.framework",
     "QuartzCore.framework",
   ]
+
+  if (true) {
+    compress = true
+
+    ld_path = rebase_path("//flutter/shell/platform/darwin/ld/ld")
+    ldflags += [
+      "-fuse-ld=$ld_path",
+    ]
+
+    if (compress) {
+      ldflags += [
+        "-Xlinker", "-compress=zlib",
+        "-Xlinker", "-simplify_objc_method_type"
+      ]
+    }
+  }
 }
 
 copy("copy_dylib") {
