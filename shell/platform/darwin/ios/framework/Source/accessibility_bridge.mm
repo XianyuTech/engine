@@ -198,6 +198,7 @@ static std::vector<SemanticsObject*> focusedAccessibilityElements;
 }
 
 - (void)dealloc {
+  focusedAccessibilityElements.erase(std::remove(focusedAccessibilityElements.begin(), focusedAccessibilityElements.end(), self),focusedAccessibilityElements.end());
   for (SemanticsObject* child in _children) {
     child.parent = nil;
   }
