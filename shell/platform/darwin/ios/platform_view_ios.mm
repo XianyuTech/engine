@@ -145,10 +145,12 @@ void PlatformViewIOS::SetAccessibilityFeatures(int32_t flags) {
 void PlatformViewIOS::UpdateSemantics(flutter::SemanticsNodeUpdates update,
                                       flutter::CustomAccessibilityActionUpdates actions) {
   FML_DCHECK(owner_controller_);
-  if (accessibility_bridge_) {
-    accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
-    [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
+  if (@available(iOS 10.0, *)) {
+      if (accessibility_bridge_) {
+          accessibility_bridge_->UpdateSemantics(std::move(update), std::move(actions));
+          [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
                                                         object:owner_controller_.get()];
+      }
   }
 }
 
