@@ -18,6 +18,8 @@ class MessageLoopImpl;
 
 class TaskRunner : public fml::RefCountedThreadSafe<TaskRunner> {
  public:
+  static std::atomic_bool disableGPU;
+ public:
   virtual ~TaskRunner();
 
   virtual void PostTask(const fml::closure& task);

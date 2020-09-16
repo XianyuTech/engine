@@ -8,6 +8,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/fml/task_runner.h"
 #include "flutter/shell/common/persistent_cache.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -259,6 +260,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   SurfaceFrame::SubmitCallback submit_callback =
       [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
                                           SkCanvas* canvas) {
+        if(fml::TaskRunner::disableGPU == true){
+          FML_LOG(INFO)<<"[XDEBUG] disabled gpu is in effect.";
+          return true;
+        }
         return weak ? weak->PresentSurface(canvas) : false;
       };
 

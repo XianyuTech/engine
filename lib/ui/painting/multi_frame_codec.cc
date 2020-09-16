@@ -5,6 +5,7 @@
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/task_runner.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkPixelRef.h"
 #include "third_party/tonic/logging/dart_invoke.h"
@@ -119,6 +120,9 @@ sk_sp<SkImage> MultiFrameCodec::State::GetNextFrameImage(
   }
 
   if (resourceContext) {
+    if(fml::TaskRunner::disableGPU == true){
+      return nullptr;
+    }
     SkPixmap pixmap(bitmap.info(), bitmap.pixelRef()->pixels(),
                     bitmap.pixelRef()->rowBytes());
     return SkImage::MakeCrossContextFromPixmap(resourceContext.get(), pixmap,

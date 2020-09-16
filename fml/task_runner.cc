@@ -14,6 +14,7 @@
 #include "flutter/fml/message_loop_task_queues.h"
 
 namespace fml {
+std::atomic_bool TaskRunner::disableGPU = false;
 
 TaskRunner::TaskRunner(fml::RefPtr<MessageLoopImpl> loop)
     : loop_(std::move(loop)) {}

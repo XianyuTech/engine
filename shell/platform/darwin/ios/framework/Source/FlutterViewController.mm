@@ -14,6 +14,7 @@
 #include "flutter/fml/platform/darwin/platform_version.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/thread_host.h"
+#include "flutter/fml/task_runner.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
@@ -586,6 +587,11 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)viewWillAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillAppear");
 
+  if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive) {
+      fml::TaskRunner::disableGPU = false;
+  }else{
+      fml::TaskRunner::disableGPU = true;
+  }
   // Send platform settings to Flutter, e.g., platform brightness.
   [self onUserSettingsChanged:nil];
 
@@ -601,6 +607,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewDidAppear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidAppear");
+  if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive) {
+    fml::TaskRunner::disableGPU = false;
+  }else{
+    fml::TaskRunner::disableGPU = true;
+  }
+    
   [self onLocaleUpdated:nil];
   [self onUserSettingsChanged:nil];
   [self onAccessibilityStatusChanged:nil];
@@ -611,6 +623,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewWillDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewWillDisappear");
+  if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive) {
+    fml::TaskRunner::disableGPU = false;
+  }else{
+    fml::TaskRunner::disableGPU = true;
+  }
+    
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 
   [super viewWillDisappear:animated];
@@ -618,6 +636,12 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)viewDidDisappear:(BOOL)animated {
   TRACE_EVENT0("flutter", "viewDidDisappear");
+  if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive) {
+    fml::TaskRunner::disableGPU = false;
+  }else{
+    fml::TaskRunner::disableGPU = true;
+  }
+    
   [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
   [self flushOngoingTouches];

@@ -5,6 +5,7 @@
 #include "flutter/shell/gpu/gpu_surface_metal.h"
 
 #include <QuartzCore/CAMetalLayer.h>
+#include "flutter/fml/task_runner.h"
 
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -80,6 +81,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
 
   auto submit_callback = [this](const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
     TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
+    if(fml::TaskRunner::disableGPU == true){
+      FML_LOG(INFO)<<"[XDEBUG] disabled gpu is in effect.";
+      return true;
+    }
     canvas->flush();
 
     if (next_drawable_ == nullptr) {

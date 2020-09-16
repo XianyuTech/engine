@@ -710,10 +710,12 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 #pragma mark - Notifications
 
 - (void)applicationBecameActive:(NSNotification*)notification {
+  fml::TaskRunner::disableGPU = false;
   [self setIsGpuDisabled:NO];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
+  fml::TaskRunner::disableGPU = true;
   [self setIsGpuDisabled:YES];
 }
 
