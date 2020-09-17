@@ -592,6 +592,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   }else{
       fml::TaskRunner::disableGPU = true;
   }
+  FML_LOG(INFO)<<"[XDEBUG] viewWillAppear disabled gpu: " << fml::TaskRunner::disableGPU;
   // Send platform settings to Flutter, e.g., platform brightness.
   [self onUserSettingsChanged:nil];
 
@@ -612,6 +613,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   }else{
     fml::TaskRunner::disableGPU = true;
   }
+  FML_LOG(INFO)<<"[XDEBUG] viewDidAppear disabled gpu: " << fml::TaskRunner::disableGPU;
     
   [self onLocaleUpdated:nil];
   [self onUserSettingsChanged:nil];
@@ -628,6 +630,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   }else{
     fml::TaskRunner::disableGPU = true;
   }
+  FML_LOG(INFO)<<"[XDEBUG] viewWillDisappear disabled gpu: " << fml::TaskRunner::disableGPU;
     
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 
@@ -641,6 +644,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
   }else{
     fml::TaskRunner::disableGPU = true;
   }
+  FML_LOG(INFO)<<"[XDEBUG] viewDidDisappear disabled gpu: " << fml::TaskRunner::disableGPU;
     
   [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
