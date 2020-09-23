@@ -481,14 +481,7 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                                     std::move(windowData),    // window data
                                     std::move(settings),      // settings
                                     on_create_platform_view,  // platform view creation
-                                    on_create_rasterizer,      // rasterzier creation
-                                    [self, entrypoint = [entrypoint copy]](bool initialized) {
-                                      if (initialized) {
-                                        [self postInitialized];
-                                      } else {
-                                        FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: " << ((NSString *)entrypoint).UTF8String;
-                                      }
-                                    }
+                                    on_create_rasterizer      // rasterzier creation
     );
   } else {
     flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
@@ -497,26 +490,19 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
                                       _threadHost.ui_thread->GetTaskRunner(),          // ui
                                       _threadHost.io_thread->GetTaskRunner()           // io
     );
-    // Create the shell. This is a asynchronous operation.
+    // Create the shell. This is a blocking operation.
     _shell = flutter::Shell::Create(std::move(task_runners),  // task runners
                                     std::move(windowData),    // window data
                                     std::move(settings),      // settings
                                     on_create_platform_view,  // platform view creation
-                                    on_create_rasterizer,      // rasterzier creation
-                                    [self, entrypoint = [entrypoint copy]](bool initialized) {
-                                      if (initialized) {
-                                        [self postInitialized];
-                                      } else {
-                                        FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: " << ((NSString *)entrypoint).UTF8String;
-                                      }
-                                    }
+                                    on_create_rasterizer      // rasterzier creation
     );
   }
 
-  return _shell != nullptr;
-}
-
-- (void)postInitialized {
+  if (_shell == nullptr) {
+    FML_LOG(ERROR) << "Could not start a shell FlutterEngine with entrypoint: "
+                   << entrypoint.UTF8String;
+  } else {
     [self setupChannels];
     if (!_platformViewsController) {
       _platformViewsController.reset(new flutter::FlutterPlatformViewsController());
@@ -524,6 +510,9 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
     _publisher.reset([[FlutterObservatoryPublisher alloc] init]);
     [self maybeSetupPlatformViewChannels];
     _shell->GetIsGpuDisabledSyncSwitch()->SetSwitch(_isGpuDisabled ? true : false);
+  }
+
+  return _shell != nullptr;
 }
 
 - (BOOL)run {
