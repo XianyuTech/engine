@@ -727,8 +727,6 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationWillEnterForeground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillEnterForeground");
-  fml::TaskRunner::disableGPU = false;
-  FML_LOG(ERROR)<<"[XDEBUG] applicationWillEnterForeground disabled gpu: " << fml::TaskRunner::disableGPU;
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
   [_updateViewportMetrics coalesceForSeconds:0.5];
 }
