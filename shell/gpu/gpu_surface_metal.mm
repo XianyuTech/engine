@@ -82,7 +82,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetal::AcquireFrame(const SkISize& frame
   auto submit_callback = [this](const SurfaceFrame& surface_frame, SkCanvas* canvas) -> bool {
     TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
     if(fml::TaskRunner::disableGPU == true){
-      FML_LOG(INFO)<<"[XDEBUG] disabled gpu is in effect.";
+      FML_LOG(ERROR)<<"[XDEBUG] disabled gpu is in effect.";
       return true;
     }
     canvas->flush();

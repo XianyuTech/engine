@@ -121,7 +121,7 @@ sk_sp<SkImage> MultiFrameCodec::State::GetNextFrameImage(
 
   if (resourceContext) {
     if(fml::TaskRunner::disableGPU == true){
-      FML_LOG(INFO)<<"[XDEBUG] disabled gpu is in effect.";
+      FML_LOG(ERROR)<<"[XDEBUG] disabled gpu is in effect.";
       return nullptr;
     }
     SkPixmap pixmap(bitmap.info(), bitmap.pixelRef()->pixels(),

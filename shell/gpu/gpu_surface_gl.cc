@@ -261,7 +261,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
       [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
                                           SkCanvas* canvas) {
         if(fml::TaskRunner::disableGPU == true){
-          FML_LOG(INFO)<<"[XDEBUG] disabled gpu is in effect.";
+          FML_LOG(ERROR)<<"[XDEBUG] disabled gpu is in effect.";
           return true;
         }
         return weak ? weak->PresentSurface(canvas) : false;
