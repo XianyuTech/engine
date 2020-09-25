@@ -554,11 +554,14 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 - (void)_innerSurfaceUpdated:(BOOL)appeared {
   // NotifyCreated/NotifyDestroyed are synchronous and require hops between the UI and GPU thread.
   if (appeared) {
+    fml::TaskRunner::disableGPU = false;
     [self installFirstFrameCallback];
     [_engine.get() platformViewsController] -> SetFlutterView(_flutterView.get());
     [_engine.get() platformViewsController] -> SetFlutterViewController(self);
     [_engine.get() platformView] -> NotifyCreated();
   } else {
+    fml::TaskRunner::disableGPU = true;
+    FML_LOG(ERROR)<<"[XDEBUG] _innerSurfaceUpdated disabled gpu: " << fml::TaskRunner::disableGPU;
     self.displayingFlutterUI = NO;
     [_engine.get() platformView] -> NotifyDestroyed();
     [_engine.get() platformViewsController] -> SetFlutterView(nullptr);
