@@ -76,7 +76,7 @@ class SkiaGPUObject {
       queue_->Unref(object_.release());
     }
     queue_ = nullptr;
-    FML_DCHECK(object_ == nullptr);
+    //FML_DCHECK(object_ == nullptr);
   }
 
  private:
