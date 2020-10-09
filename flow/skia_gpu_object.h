@@ -76,10 +76,7 @@ class SkiaGPUObject {
       queue_->Unref(object_.release());
     }
     queue_ = nullptr;
-      if(object_ != nullptr){
-        FML_LOG(ERROR)<<"[XDEBUG] Skia gpu object is not null~";
-      }
-//    FML_DCHECK(object_ == nullptr);
+    FML_DCHECK(object_ == nullptr);
   }
 
  private:
