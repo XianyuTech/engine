@@ -699,14 +699,14 @@ NSString* const FlutterDefaultDartEntrypoint = nil;
 #pragma mark - Notifications
 
 - (void)applicationBecameActive:(NSNotification*)notification {
-  setGpuRenderEnable(true);
+  setGpuRenderDisable(false);
   fml::TaskRunner::disableGPU = false;
   FML_LOG(ERROR)<<"[XDEBUG] FlutterEngine applicationBecameActive disabled gpu: " << fml::TaskRunner::disableGPU;
   [self setIsGpuDisabled:NO];
 }
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
-  setGpuRenderEnable(false);
+  setGpuRenderDisable(true);
   fml::TaskRunner::disableGPU = true;
   FML_LOG(ERROR)<<"[XDEBUG] FlutterEngine applicationWillResignActive disabled gpu: " << fml::TaskRunner::disableGPU;
   [self setIsGpuDisabled:YES];

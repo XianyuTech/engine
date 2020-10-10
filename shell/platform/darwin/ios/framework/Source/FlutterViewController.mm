@@ -703,7 +703,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
-  setGpuRenderEnable(true);
+  setGpuRenderDisable(false);
   fml::TaskRunner::disableGPU = false;
   FML_LOG(ERROR)<<"[XDEBUG] applicationBecameActive disabled gpu: " << fml::TaskRunner::disableGPU;
   if (_viewportMetrics.physical_width)
@@ -713,7 +713,7 @@ static void sendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationWillResignActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationWillResignActive");
-  setGpuRenderEnable(false);
+  setGpuRenderDisable(true);
   fml::TaskRunner::disableGPU = true;
   FML_LOG(ERROR)<<"[XDEBUG] applicationWillResignActive disabled gpu: " << fml::TaskRunner::disableGPU;
   [self surfaceUpdated:NO];
