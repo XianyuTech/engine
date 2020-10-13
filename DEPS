@@ -24,7 +24,7 @@ vars = {
   'dart_git': 'https://dart.googlesource.com',
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
-  'skia_git': 'https://skia.googlesource.com',
+  'skia_git': 'git@gitlab.alibaba-inc.com:ali-flutter/skia.git',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
   'skia_revision': '7d653da2444486fb4b797189740cfd025777f9db',
