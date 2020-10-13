@@ -405,6 +405,7 @@ using namespace flutter;
   UInt8 elementSize = elementSizeForFlutterStandardDataType(type);
   [self readAlignment:elementSize];
   NSData* data = [self readData:elementCount * elementSize];
+  if (data == nil) return nil;
   return [FlutterStandardTypedData typedDataWithData:data type:type];
 }
 

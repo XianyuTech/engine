@@ -23,7 +23,11 @@ namespace txt {
 
 StyledRuns::StyledRuns() = default;
 
-StyledRuns::~StyledRuns() = default;
+StyledRuns::~StyledRuns()
+{
+  runs_.clear();
+  styles_.clear();
+}
 
 StyledRuns::StyledRuns(StyledRuns&& other) {
   styles_.swap(other.styles_);
