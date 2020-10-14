@@ -27,7 +27,8 @@ vars = {
   'skia_git': 'git@gitlab.alibaba-inc.com:ali-flutter/skia.git',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': '8cdd96d4449f3cf5b2738c000dc18eff4d00e4d9',
+  'skia_revision': '480b7a249578d2b87adcdb41613e43857fc0d494',
+  'dart_revision': 'f9fcf8ab2708d253f7a6f2abd7bf6a03abe92010',
 
   # When updating the Dart revision, ensure that all entries that are
   # dependencies of Dart are also updated to match the entries in the
@@ -185,7 +186,7 @@ deps = {
    'https://boringssl.googlesource.com/boringssl.git' + '@' + Var('dart_boringssl_rev'),
 
   'src/third_party/dart':
-   Var('alf_dart_git') + '@' + Var('alf_dart_tag'),
+   Var('alf_dart_git') + '@' + Var('dart_revision'),
 
   # WARNING: Unused Dart dependencies in the list below till "WARNING:" marker are removed automatically - see create_updated_flutter_deps.py.
 
