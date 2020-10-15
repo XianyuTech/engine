@@ -127,13 +127,11 @@ void MessageLoopImpl::FlushTasks(FlushType type) {
 
   for (const auto& invocation : invocations) {
     if (!invocation) continue;
-    if (isGpuRenderDisabled()) break;
     invocation();
     std::vector<fml::closure> observers =
         task_queue_->GetObserversToNotify(queue_id_);
     for (const auto& observer : observers) {
       if (!observer) continue;
-      if (isGpuRenderDisabled()) break;
       observer();
     }
   }
