@@ -240,53 +240,60 @@ void InitializeExternalAdapterImageManager(
   }
 }
 
-static SkiaGPUObject<SkImage> UploadTexture(
+static SkiaGPUObject<SkImage> UploadTextureSoftwareBackend(
     ExternalAdapterImageProvider::Bitmap& bitmap) {
   SkImageInfo imageInfo = SkImageInfo::Make(bitmap.width, bitmap.height,
-                                            ConvertColorType(bitmap.colorType),
-                                            ConvertAlphaType(bitmap.alphaType));
+      ConvertColorType(bitmap.colorType),
+      ConvertAlphaType(bitmap.alphaType));
+  SkPixmap pixmap;
+  if (bitmap.pixelsCopied) {
+    pixmap =
+        SkPixmap(imageInfo, bitmap.pixels, bitmap.bytesPerRow);
+    bitmap.pixels = nullptr;
+  } else {
+    size_t bufferSize = bitmap.bytesPerRow * bitmap.height;
+    void* copiedPixels = malloc(bufferSize);
+    if (copiedPixels == nullptr) {
+      return {};
+    }
+    memcpy(copiedPixels, (const void*)bitmap.pixels, bufferSize);
+    pixmap =
+        SkPixmap(imageInfo, copiedPixels, bitmap.bytesPerRow);
+  }
+  sk_sp<SkImage> texture = SkImage::MakeFromRaster(
+      pixmap,
+      [](const void* pixels, SkImage::ReleaseContext context) {
+        free((void*)pixels);
+      },
+      nullptr);
+  return {texture, nullptr};
+}
+
+static SkiaGPUObject<SkImage> UploadTexture(
+    ExternalAdapterImageProvider::Bitmap& bitmap) {
   SkiaGPUObject<SkImage> result;
   external_adapter_image_manager->ioManager()
       ->GetIsGpuDisabledSyncSwitch()
       ->Execute(
           fml::SyncSwitch::Handlers()
-              .SetIfTrue([&result, &bitmap, &imageInfo] {
+              .SetIfTrue([&result, &bitmap] {
                 /* Here we create a CPU based image because App is in background
                  state. But the pixels must remain alive until the created
                  SkImage is deallocated. So if Bitmap's pixels are copied, we
                  can transfer its ownership to us. If Bitmap's pixels are not
                  copied, we have to copy the pixels.
                  */
-                SkPixmap pixmap;
-                if (bitmap.pixelsCopied) {
-                  pixmap =
-                      SkPixmap(imageInfo, bitmap.pixels, bitmap.bytesPerRow);
-                  bitmap.pixels = nullptr;
-                } else {
-                  size_t bufferSize = bitmap.bytesPerRow * bitmap.height;
-                  void* copiedPixels = malloc(bufferSize);
-                  if (copiedPixels == nullptr) {
-                    result = {};
-                    return;
-                  }
-                  memcpy(copiedPixels, (const void*)bitmap.pixels, bufferSize);
-                  pixmap =
-                      SkPixmap(imageInfo, copiedPixels, bitmap.bytesPerRow);
-                }
-                sk_sp<SkImage> texture = SkImage::MakeFromRaster(
-                    pixmap,
-                    [](const void* pixels, SkImage::ReleaseContext context) {
-                      free((void*)pixels);
-                    },
-                    nullptr);
-                result = {texture, nullptr};
+                result = UploadTextureSoftwareBackend(bitmap);
               })
               .SetIfFalse([&result,
                            context = external_adapter_image_manager->ioManager()
                                          ->GetResourceContext(),
                            queue = external_adapter_image_manager->ioManager()
                                        ->GetSkiaUnrefQueue(),
-                           &bitmap, &imageInfo] {
+                           &bitmap] {
+                SkImageInfo imageInfo = SkImageInfo::Make(bitmap.width, bitmap.height,
+                    ConvertColorType(bitmap.colorType),
+                    ConvertAlphaType(bitmap.alphaType));
                 SkPixmap pixmap(imageInfo, bitmap.pixels, bitmap.bytesPerRow);
                 sk_sp<SkImage> texture = SkImage::MakeCrossContextFromPixmap(
                     context.get(),  // context
@@ -568,29 +575,40 @@ Dart_Handle ExternalAdapterImageFrameCodec::getNextFrame(Dart_Handle callback) {
 
                         auto ioManager =
                             external_adapter_image_manager->ioManager();
-                        bool ioStatusValid = ioManager &&
-                                             ioManager->GetResourceContext() &&
-                                             ioManager->GetSkiaUnrefQueue();
+                        
                         SkiaGPUObject<SkImage> uploaded;
                         bool quit = false;
+                        
+                        // If the IO manager does not have a resource context,
+                        // the caller might not have set one or a software backend
+                        // could be in use. Either way, just return the image as-is.
+                        if (ioManager && !ioManager->GetResourceContext()) {
+                          uploaded = UploadTextureSoftwareBackend(
+                            *(const_cast<ExternalAdapterImageProvider::Bitmap*>
+                            (&bitmap)));
+                        }
+                        else {
+                          bool ioStatusValid = ioManager &&
+                                               ioManager->GetResourceContext() &&
+                                               ioManager->GetSkiaUnrefQueue();
+                          {
+                            /* If bitmap data is held by platform image,
+                            we must ensure the valid status of bitmap data
+                            until the texture is safely uploaded to GPU. */
+                            std::lock_guard<std::recursive_mutex> lock(
+                              codec->platformImageLock_);
 
-                        {
-                          /* If bitmap data is held by platform image, 
-                          we must ensure the valid status of bitmap data 
-                          until the texture is safely uploaded to GPU. */
-                          std::lock_guard<std::recursive_mutex> lock(
-                            codec->platformImageLock_);
-
-                          // Check again before we really do uploading to GPU.
-                          if (codec->isCanceled()) {
-                            quit = true;
-                          }
-                          else {
-                            if (ioStatusValid) {
-                              // This line do upload texture to GPU memory.
-                              uploaded = UploadTexture(
-                                *(const_cast<ExternalAdapterImageProvider::Bitmap*>
-                                (&bitmap)));
+                            // Check again before we really do uploading to GPU.
+                            if (codec->isCanceled()) {
+                              quit = true;
+                            }
+                            else {
+                              if (ioStatusValid) {
+                                // This line do upload texture to GPU memory.
+                                uploaded = UploadTexture(
+                                  *(const_cast<ExternalAdapterImageProvider::Bitmap*>
+                                  (&bitmap)));
+                              }
                             }
                           }
                         }
@@ -837,15 +855,27 @@ void ExternalAdapterImageFrameCodec::getNextMultiframe(Dart_Handle callback) {
                 }
 
                 auto ioManager = external_adapter_image_manager->ioManager();
-                bool ioStatusValid = ioManager &&
-                                     ioManager->GetResourceContext() &&
-                                     ioManager->GetSkiaUnrefQueue();
-
                 SkiaGPUObject<SkImage> uploaded;
-                if (ioStatusValid) {
-                  uploaded = UploadTexture(
-                      *(const_cast<ExternalAdapterImageProvider::Bitmap*>(
-                          &bitmap)));
+            
+                // If the IO manager does not have a resource context,
+                // the caller might not have set one or a software backend
+                // could be in use. Either way, just return the image as-is.
+                if (ioManager && !ioManager->GetResourceContext()) {
+                  uploaded = UploadTextureSoftwareBackend(
+                    *(const_cast<ExternalAdapterImageProvider::Bitmap*>
+                    (&bitmap)));
+                }
+                else {
+                  bool ioStatusValid = ioManager &&
+                                       ioManager->GetResourceContext() &&
+                                       ioManager->GetSkiaUnrefQueue();
+
+                  
+                  if (ioStatusValid) {
+                    uploaded = UploadTexture(
+                        *(const_cast<ExternalAdapterImageProvider::Bitmap*>(
+                            &bitmap)));
+                  }
                 }
 
                 // Release pixels, because pixels might be copied besides
