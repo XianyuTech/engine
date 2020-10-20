@@ -235,7 +235,7 @@ RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<flutter::LayerTree> layer_tree) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
-  if (!layer_tree || !surface_) {
+  if (!layer_tree || !surface_ || isGpuRenderDisabled()) {
     return RasterStatus::kFailed;
   }
 
@@ -297,6 +297,10 @@ RasterStatus Rasterizer::DoDraw(
 RasterStatus Rasterizer::DrawToSurface(flutter::LayerTree& layer_tree) {
   TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
+
+  if (isGpuRenderDisabled()) {
+    return RasterStatus::kFailed;
+  }
 
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
 

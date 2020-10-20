@@ -230,6 +230,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGL::AcquireFrame(const SkISize& size) {
   if (delegate_ == nullptr) {
     return nullptr;
   }
+  if (isGpuRenderDisabled()) {
+    return nullptr;
+  }
 
   if (!delegate_->GLContextMakeCurrent()) {
     FML_LOG(ERROR)
