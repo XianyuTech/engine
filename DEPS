@@ -25,6 +25,7 @@ vars = {
   'fuchsia_git': 'https://fuchsia.googlesource.com',
   'github_git': 'https://github.com',
   'skia_git': 'git@gitlab.alibaba-inc.com:ali-flutter/skia.git',
+  'upstream_skia_git': 'https://skia.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
   'skia_revision': '4c8f4636d643807422db68f72661895bf790c4f7',
@@ -406,7 +407,7 @@ deps = {
    Var('chromium_git') + '/webm/libwebp.git' + '@' + '0.6.0',
 
   'src/third_party/wuffs':
-   Var('skia_git') + '/external/github.com/google/wuffs.git' + '@' +  '4080840928c0b05a80cda0d14ac2e2615f679f1a',
+   Var('upstream_skia_git') + '/external/github.com/google/wuffs.git' + '@' +  '4080840928c0b05a80cda0d14ac2e2615f679f1a',
 
   'src/third_party/fontconfig/src':
    Var('chromium_git') + '/external/fontconfig.git' + '@' + 'c336b8471877371f0190ba06f7547c54e2b890ba',

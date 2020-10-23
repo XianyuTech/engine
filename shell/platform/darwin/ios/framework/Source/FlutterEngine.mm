@@ -31,6 +31,10 @@
 
 NSString* const FlutterDefaultDartEntrypoint = nil;
 
+void alf_logmsg(NSString* _Nullable logMsg) {
+    NSLog(@"KWLM:%@ called!",logMsg);
+}
+
 @interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
 @property(nonatomic, assign) FlutterEngine* flutterEngine;
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine;

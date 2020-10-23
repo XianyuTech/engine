@@ -19,6 +19,17 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+FLUTTER_EXPORT
+void alf_logmsg(NSString* _Nullable logMsg);
+
+#if defined(__cplusplus)
+}  // extern C
+#endif
+
 /**
  * The dart entrypoint that is associated with `main()`.  This is to be used as an argument to the
  * `runWithEntrypoint*` methods.
