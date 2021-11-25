@@ -237,27 +237,28 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
     return;
   }
 
-  // The AwaitVSync is going to call us back at the next VSync. However, we want
-  // to be reasonably certain that the UI thread is not in the middle of a
-  // particularly expensive callout. We post the AwaitVSync to run right after
-  // an idle. This does NOT provide a guarantee that the UI thread has not
-  // started an expensive operation right after posting this message however.
-  // To support that, we need edge triggered wakes on VSync.
+  bool should_await_vsync_on_idle = waiter_->ShouldAwaitVSyncOnIdle();
+  if (!should_await_vsync_on_idle) {
+    AwaitVSync();
+  }
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [self = weak_factory_.GetWeakPtr(),
-       frame_request_number = frame_request_number_]() {
+      [self = weak_factory_.GetWeakPtr(), should_await_vsync_on_idle]() {
         if (!self) {
           return;
         }
-        TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
-                                 frame_request_number);
-        self->AwaitVSync();
+        if (should_await_vsync_on_idle) {
+          self->AwaitVSync();
+        }
+        self->NotifyIdle();
       });
   frame_scheduled_ = true;
 }
 
 void Animator::AwaitVSync() {
+  TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
+                           frame_request_number_);
+
   waiter_->AsyncWaitForVsync(
       [self = weak_factory_.GetWeakPtr()](
           std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
@@ -269,6 +270,9 @@ void Animator::AwaitVSync() {
           }
         }
       });
+}
+
+void Animator::NotifyIdle() {
   if (has_rendered_) {
     delegate_.OnAnimatorNotifyIdle(
         dart_frame_deadline_.ToEpochDelta().ToMicroseconds());
